@@ -13,7 +13,7 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-50 bg-charcoal/85 backdrop-blur-xl border-b border-border">
       <div className="max-w-7xl mx-auto px-6 lg:px-10 h-20 grid grid-cols-3 items-center">
-        <Link to="/" className="font-display italic text-2xl text-blush tracking-tight">
+        <Link to="/" className="font-display italic text-2xl text-blush tracking-tight font-mono">
           receitahub
         </Link>
 
