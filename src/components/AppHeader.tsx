@@ -45,12 +45,17 @@ export function AppHeader() {
           })}
         </nav>
 
-        <div className="flex items-center justify-end gap-6 text-sm">
+        <div className="flex items-center justify-end gap-5 text-sm">
           {session ? (
             <>
-              <span className="text-cream/60 hidden sm:inline truncate max-w-[180px]">
+              <Link
+                to="/perfil"
+                className={`transition truncate max-w-[180px] ${
+                  path === "/perfil" ? "text-blush" : "text-cream/70 hover:text-cream"
+                }`}
+              >
                 {session.user.email}
-              </span>
+              </Link>
               <button
                 onClick={handleLogout}
                 className="text-cream/70 hover:text-blush transition"
