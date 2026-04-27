@@ -1,6 +1,43 @@
 import { type Recipe } from "@/data/recipes";
+import { useNavigate } from "@tanstack/react-router";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 
 export function RecipeCard({ recipe }: { recipe: Recipe }) {
+  const { session } = useAuth();
+  const navigate = useNavigate();
+  const [saved, setSaved] = useState(!!recipe.saved);
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!session) {
+      navigate({ to: "/login" });
+      return;
+    }
+
+    if (saving) return;
+    setSaving(true);
+
+    const { error } = await supabase.from("user_recipes").insert({
+      user_id: session.user.id,
+      title: recipe.title,
+      image_url: recipe.image,
+      category: recipe.category,
+      time_minutes: recipe.time,
+      difficulty: recipe.difficulty,
+      diet: recipe.diet,
+      description: recipe.description,
+      is_favorite: true,
+    });
+
+    setSaving(false);
+    if (!error) setSaved(true);
+  };
+
   return (
     <article className="group relative bg-charcoal-light rounded-2xl overflow-hidden border border-border hover:border-blush/40 transition-all duration-500 hover:-translate-y-1">
       <div className="relative aspect-[4/5] overflow-hidden">
@@ -20,16 +57,19 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
 
         {/* Save */}
         <button
-          className="absolute top-4 right-4 h-9 w-9 rounded-full bg-charcoal/80 backdrop-blur-md border border-border flex items-center justify-center hover:bg-blush hover:text-charcoal transition"
-          aria-label="Salvar receita"
+          onClick={handleSave}
+          disabled={saving || saved}
+          className="absolute top-4 right-4 h-9 w-9 rounded-full bg-charcoal/80 backdrop-blur-md border border-border flex items-center justify-center hover:bg-blush hover:text-charcoal transition disabled:opacity-70"
+          aria-label={session ? "Salvar receita" : "Faça login para salvar"}
+          title={session ? (saved ? "Salva" : "Salvar receita") : "Faça login para salvar"}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
-            fill={recipe.saved ? "currentColor" : "none"}
+            fill={saved ? "currentColor" : "none"}
             stroke="currentColor"
             strokeWidth="1.5"
-            className={`h-4 w-4 ${recipe.saved ? "text-blush" : "text-cream"}`}
+            className={`h-4 w-4 ${saved ? "text-blush" : "text-cream"}`}
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" />
           </svg>
