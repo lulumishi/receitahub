@@ -18,9 +18,11 @@ export type Database = {
         Row: {
           category: string
           created_at: string
+          expires_at: string | null
           expires_in: number
           id: string
           name: string
+          purchased_at: string | null
           quantity: string | null
           updated_at: string
           user_id: string
@@ -28,9 +30,11 @@ export type Database = {
         Insert: {
           category?: string
           created_at?: string
+          expires_at?: string | null
           expires_in?: number
           id?: string
           name: string
+          purchased_at?: string | null
           quantity?: string | null
           updated_at?: string
           user_id: string
@@ -38,9 +42,11 @@ export type Database = {
         Update: {
           category?: string
           created_at?: string
+          expires_at?: string | null
           expires_in?: number
           id?: string
           name?: string
+          purchased_at?: string | null
           quantity?: string | null
           updated_at?: string
           user_id?: string
