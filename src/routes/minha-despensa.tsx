@@ -80,6 +80,9 @@ function PantryPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("todos");
+  const [statusFilter, setStatusFilter] = useState<"todos" | "vencidos" | "vencendo" | "ok">(
+    "todos",
+  );
   const [showForm, setShowForm] = useState(false);
   const [newItem, setNewItem] = useState({
     name: "",
@@ -117,7 +120,6 @@ function PantryPage() {
   }
 
   const categories = ["todos", ...Array.from(new Set(items.map((i) => i.category)))];
-  const filtered = filter === "todos" ? items : items.filter((i) => i.category === filter);
 
   // "expiring" = vence em até 5 dias (usa expires_at se existir, senão expires_in)
   const today = todayISO();
@@ -125,7 +127,21 @@ function PantryPage() {
     if (item.expires_at) return daysBetween(today, item.expires_at);
     return item.expires_in;
   };
-  const expiring = items.filter((i) => computeDaysLeft(i) <= 5).length;
+  const getStatus = (item: Item): "vencidos" | "vencendo" | "ok" => {
+    const d = computeDaysLeft(item);
+    if (d < 0) return "vencidos";
+    if (d <= 5) return "vencendo";
+    return "ok";
+  };
+
+  const expiredCount = items.filter((i) => getStatus(i) === "vencidos").length;
+  const expiring = items.filter((i) => getStatus(i) === "vencendo").length;
+
+  const filtered = items.filter((i) => {
+    if (filter !== "todos" && i.category !== filter) return false;
+    if (statusFilter !== "todos" && getStatus(i) !== statusFilter) return false;
+    return true;
+  });
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
