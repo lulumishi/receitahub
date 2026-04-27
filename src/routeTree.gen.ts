@@ -9,10 +9,16 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ReceitasRouteImport } from './routes/receitas'
 import { Route as MinhasReceitasRouteImport } from './routes/minhas-receitas'
 import { Route as MinhaDespensaRouteImport } from './routes/minha-despensa'
 import { Route as IndexRouteImport } from './routes/index'
 
+const ReceitasRoute = ReceitasRouteImport.update({
+  id: '/receitas',
+  path: '/receitas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MinhasReceitasRoute = MinhasReceitasRouteImport.update({
   id: '/minhas-receitas',
   path: '/minhas-receitas',
@@ -33,34 +39,45 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/minha-despensa': typeof MinhaDespensaRoute
   '/minhas-receitas': typeof MinhasReceitasRoute
+  '/receitas': typeof ReceitasRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/minha-despensa': typeof MinhaDespensaRoute
   '/minhas-receitas': typeof MinhasReceitasRoute
+  '/receitas': typeof ReceitasRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/minha-despensa': typeof MinhaDespensaRoute
   '/minhas-receitas': typeof MinhasReceitasRoute
+  '/receitas': typeof ReceitasRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/minha-despensa' | '/minhas-receitas'
+  fullPaths: '/' | '/minha-despensa' | '/minhas-receitas' | '/receitas'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/minha-despensa' | '/minhas-receitas'
-  id: '__root__' | '/' | '/minha-despensa' | '/minhas-receitas'
+  to: '/' | '/minha-despensa' | '/minhas-receitas' | '/receitas'
+  id: '__root__' | '/' | '/minha-despensa' | '/minhas-receitas' | '/receitas'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   MinhaDespensaRoute: typeof MinhaDespensaRoute
   MinhasReceitasRoute: typeof MinhasReceitasRoute
+  ReceitasRoute: typeof ReceitasRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/receitas': {
+      id: '/receitas'
+      path: '/receitas'
+      fullPath: '/receitas'
+      preLoaderRoute: typeof ReceitasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/minhas-receitas': {
       id: '/minhas-receitas'
       path: '/minhas-receitas'
@@ -89,6 +106,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   MinhaDespensaRoute: MinhaDespensaRoute,
   MinhasReceitasRoute: MinhasReceitasRoute,
+  ReceitasRoute: ReceitasRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
