@@ -83,7 +83,7 @@ function PantryPage() {
   const [showForm, setShowForm] = useState(false);
   const [newItem, setNewItem] = useState({
     name: "",
-    category: "Grãos",
+    category: "",
     quantity: "",
     purchased_at: todayISO(),
     expires_at: "",
@@ -153,7 +153,7 @@ function PantryPage() {
       setItems([data as Item, ...items]);
       setNewItem({
         name: "",
-        category: "Grãos",
+        category: "",
         quantity: "",
         purchased_at: todayISO(),
         expires_at: "",
@@ -233,12 +233,18 @@ function PantryPage() {
               className="md:col-span-2 bg-charcoal border border-border rounded-xl px-4 py-3 text-cream placeholder:text-cream/40 focus:outline-none focus:border-blush/50"
             />
             <select
+              required
               value={newItem.category}
               onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
-              className="bg-charcoal border border-border rounded-xl px-4 py-3 text-cream focus:outline-none focus:border-blush/50"
+              className={`bg-charcoal border border-border rounded-xl px-4 py-3 focus:outline-none focus:border-blush/50 ${
+                newItem.category ? "text-cream" : "text-cream/40"
+              }`}
             >
+              <option value="" disabled>
+                Categoria
+              </option>
               {CATEGORIES.map((c) => (
-                <option key={c} value={c}>
+                <option key={c} value={c} className="text-cream">
                   {c}
                 </option>
               ))}
