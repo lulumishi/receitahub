@@ -14,7 +14,114 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      pantry_items: {
+        Row: {
+          category: string
+          created_at: string
+          expires_in: number
+          id: string
+          name: string
+          quantity: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          expires_in?: number
+          id?: string
+          name: string
+          quantity?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          expires_in?: number
+          id?: string
+          name?: string
+          quantity?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_recipes: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          diet: string[] | null
+          difficulty: string | null
+          id: string
+          image_url: string | null
+          ingredients: string[] | null
+          instructions: string | null
+          is_favorite: boolean
+          time_minutes: number | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          diet?: string[] | null
+          difficulty?: string | null
+          id?: string
+          image_url?: string | null
+          ingredients?: string[] | null
+          instructions?: string | null
+          is_favorite?: boolean
+          time_minutes?: number | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          diet?: string[] | null
+          difficulty?: string | null
+          id?: string
+          image_url?: string | null
+          ingredients?: string[] | null
+          instructions?: string | null
+          is_favorite?: boolean
+          time_minutes?: number | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

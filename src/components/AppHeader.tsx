@@ -1,14 +1,22 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function AppHeader() {
   const { location } = useRouterState();
   const path = location.pathname;
+  const { session, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const navItems = [
     { to: "/receitas", label: "receitas" },
     { to: "/minhas-receitas", label: "minhas receitas" },
     { to: "/minha-despensa", label: "minha despensa" },
   ] as const;
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate({ to: "/" });
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-charcoal/85 backdrop-blur-xl border-b border-border">
@@ -38,10 +46,31 @@ export function AppHeader() {
         </nav>
 
         <div className="flex items-center justify-end gap-6 text-sm">
-          <button className="text-cream/70 hover:text-cream transition">logar</button>
-          <button className="text-blush hover:text-blush-deep transition italic font-display">
-            cadastrar
-          </button>
+          {session ? (
+            <>
+              <span className="text-cream/60 hidden sm:inline truncate max-w-[180px]">
+                {session.user.email}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="text-cream/70 hover:text-blush transition"
+              >
+                sair
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="text-cream/70 hover:text-cream transition">
+                logar
+              </Link>
+              <Link
+                to="/cadastro"
+                className="text-blush hover:text-blush-deep transition italic font-display"
+              >
+                cadastrar
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </header>
