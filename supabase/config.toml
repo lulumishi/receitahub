@@ -2,3 +2,6 @@ project_id = "iqhcenrmnxndtprcvvzu"
 
 [functions.generate-recipes]
 verify_jwt = false
+
+[functions.pantry-chat]
+verify_jwt = false
