@@ -214,24 +214,76 @@ function PantryPage() {
 
         {/* Stats */}
         <div className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-charcoal-light rounded-2xl p-5 border border-border">
+          <button
+            onClick={() => setStatusFilter("todos")}
+            className={`text-left bg-charcoal-light rounded-2xl p-5 border transition hover:border-blush/40 ${
+              statusFilter === "todos" ? "border-blush" : "border-border"
+            }`}
+          >
             <div className="text-xs uppercase tracking-wider text-cream/50">Itens totais</div>
             <div className="font-display text-3xl text-cream mt-2">{items.length}</div>
-          </div>
+          </button>
           <div className="bg-charcoal-light rounded-2xl p-5 border border-border">
             <div className="text-xs uppercase tracking-wider text-cream/50">Categorias</div>
             <div className="font-display text-3xl text-cream mt-2">
               {Math.max(0, categories.length - 1)}
             </div>
           </div>
-          <div className="bg-blush/10 rounded-2xl p-5 border border-blush/30">
+          <button
+            onClick={() => setStatusFilter("vencendo")}
+            className={`text-left bg-blush/10 rounded-2xl p-5 border transition hover:bg-blush/15 ${
+              statusFilter === "vencendo" ? "border-blush" : "border-blush/30"
+            }`}
+          >
             <div className="text-xs uppercase tracking-wider text-blush">Vencendo em breve</div>
             <div className="font-display text-3xl text-blush mt-2">{expiring}</div>
-          </div>
-          <div className="bg-charcoal-light rounded-2xl p-5 border border-border">
-            <div className="text-xs uppercase tracking-wider text-cream/50">Receitas possíveis</div>
-            <div className="font-display text-3xl text-cream mt-2">—</div>
-          </div>
+            <div className="text-[10px] uppercase tracking-wider text-blush/70 mt-1">
+              próximos 5 dias
+            </div>
+          </button>
+          <button
+            onClick={() => setStatusFilter("vencidos")}
+            className={`text-left bg-red-500/10 rounded-2xl p-5 border transition hover:bg-red-500/15 ${
+              statusFilter === "vencidos" ? "border-red-400" : "border-red-500/30"
+            }`}
+          >
+            <div className="text-xs uppercase tracking-wider text-red-400">Vencidos</div>
+            <div className="font-display text-3xl text-red-400 mt-2">{expiredCount}</div>
+            <div className="text-[10px] uppercase tracking-wider text-red-400/70 mt-1">
+              clique para filtrar
+            </div>
+          </button>
+        </div>
+
+        {/* Status filter pills */}
+        <div className="mt-6 flex flex-wrap gap-2">
+          {(
+            [
+              { key: "todos", label: "todos os status", count: items.length },
+              { key: "vencidos", label: "🔴 vencidos", count: expiredCount },
+              { key: "vencendo", label: "⚠️ vencendo em breve", count: expiring },
+              { key: "ok", label: "✅ ok", count: items.length - expiredCount - expiring },
+            ] as const
+          ).map((s) => (
+            <button
+              key={s.key}
+              onClick={() => setStatusFilter(s.key)}
+              className={`px-4 py-2 rounded-full text-sm transition border flex items-center gap-2 ${
+                statusFilter === s.key
+                  ? "bg-blush text-charcoal border-blush"
+                  : "border-border text-cream/70 hover:text-cream hover:border-blush/40"
+              }`}
+            >
+              <span>{s.label}</span>
+              <span
+                className={`text-xs px-1.5 py-0.5 rounded-full ${
+                  statusFilter === s.key ? "bg-charcoal/20" : "bg-charcoal/60"
+                }`}
+              >
+                {s.count}
+              </span>
+            </button>
+          ))}
         </div>
 
         {/* Add form */}
