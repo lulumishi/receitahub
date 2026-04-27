@@ -4,7 +4,7 @@ import { RecipeCard } from "@/components/RecipeCard";
 import { recipes } from "@/data/recipes";
 import { useState } from "react";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/receitas")({
   component: RecipesPage,
   head: () => ({
     meta: [

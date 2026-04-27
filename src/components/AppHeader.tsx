@@ -5,7 +5,7 @@ export function AppHeader() {
   const path = location.pathname;
 
   const navItems = [
-    { to: "/", label: "receitas" },
+    { to: "/receitas", label: "receitas" },
     { to: "/minhas-receitas", label: "minhas receitas" },
     { to: "/minha-despensa", label: "minha despensa" },
   ] as const;
