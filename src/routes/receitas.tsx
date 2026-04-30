@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppHeader } from "@/components/AppHeader";
 import { RecipeCard } from "@/components/RecipeCard";
 import { type Recipe } from "@/data/recipes";
@@ -10,6 +10,7 @@ import recipe5 from "@/assets/recipe-5.jpg";
 import recipe6 from "@/assets/recipe-6.jpg";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const Route = createFileRoute("/receitas")({
   component: RecipesPage,
@@ -32,11 +33,28 @@ const coverImages = [recipe1, recipe2, recipe3, recipe4, recipe5, recipe6];
 type GeneratedRecipe = Omit<Recipe, "image"> & { ingredients?: string[] };
 
 function RecipesPage() {
+  const { session } = useAuth();
+  const isGuest = !session;
   const [active, setActive] = useState("todas");
   const [search, setSearch] = useState("");
   const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [pantry, setPantry] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!session) {
+      setPantry([]);
+      return;
+    }
+    void (async () => {
+      const { data } = await supabase
+        .from("pantry_items")
+        .select("name")
+        .eq("user_id", session.user.id);
+      setPantry((data ?? []).map((r) => r.name));
+    })();
+  }, [session]);
 
   async function loadRecipes(category: string) {
     setLoading(true);
