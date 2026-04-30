@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppHeader } from "@/components/AppHeader";
 import { RecipeCard } from "@/components/RecipeCard";
 import { type Recipe } from "@/data/recipes";
@@ -10,6 +10,7 @@ import recipe5 from "@/assets/recipe-5.jpg";
 import recipe6 from "@/assets/recipe-6.jpg";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const Route = createFileRoute("/receitas")({
   component: RecipesPage,
@@ -32,11 +33,28 @@ const coverImages = [recipe1, recipe2, recipe3, recipe4, recipe5, recipe6];
 type GeneratedRecipe = Omit<Recipe, "image"> & { ingredients?: string[] };
 
 function RecipesPage() {
+  const { session } = useAuth();
+  const isGuest = !session;
   const [active, setActive] = useState("todas");
   const [search, setSearch] = useState("");
   const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [pantry, setPantry] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!session) {
+      setPantry([]);
+      return;
+    }
+    void (async () => {
+      const { data } = await supabase
+        .from("pantry_items")
+        .select("name")
+        .eq("user_id", session.user.id);
+      setPantry((data ?? []).map((r) => r.name));
+    })();
+  }, [session]);
 
   async function loadRecipes(category: string) {
     setLoading(true);
@@ -78,6 +96,23 @@ function RecipesPage() {
         href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Inter:wght@300;400;500;600&display=swap"
       />
       <AppHeader />
+
+      {isGuest && (
+        <div className="bg-blush/10 border-b border-blush/30">
+          <div className="max-w-7xl mx-auto px-6 lg:px-10 py-3 flex items-center gap-4 flex-wrap">
+            <span className="text-sm text-cream/80">
+              👋 Você está navegando como visitante. Crie uma conta para salvar receitas,
+              gerenciar sua despensa e usar o chat com IA.
+            </span>
+            <Link
+              to="/cadastro"
+              className="ml-auto px-4 py-1.5 rounded-full bg-blush text-charcoal text-xs font-medium hover:bg-blush-deep transition"
+            >
+              criar conta
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* HERO */}
       <section className="relative overflow-hidden">
@@ -187,7 +222,7 @@ function RecipesPage() {
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((r) => (
-              <RecipeCard key={r.id} recipe={r} />
+              <RecipeCard key={r.id} recipe={r} pantry={pantry} />
             ))}
           </div>
         )}
