@@ -77,6 +77,42 @@ export type Database = {
         }
         Relationships: []
       }
+      shopping_list_items: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          is_purchased: boolean
+          name: string
+          quantity: string | null
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_purchased?: boolean
+          name: string
+          quantity?: string | null
+          source?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_purchased?: boolean
+          name?: string
+          quantity?: string | null
+          source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_recipes: {
         Row: {
           category: string | null
