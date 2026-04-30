@@ -183,6 +183,19 @@ function PantryPage() {
     if (!error) setItems(items.filter((i) => i.id !== id));
   };
 
+  const handleAddToShoppingList = async (item: Item) => {
+    const { error } = await supabase.from("shopping_list_items").insert({
+      user_id: session.user.id,
+      name: item.name,
+      category: item.category,
+      quantity: item.quantity,
+      source: "manual",
+    });
+    if (error) {
+      console.error(error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-charcoal text-cream">
       <link
