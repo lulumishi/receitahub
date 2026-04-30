@@ -7,11 +7,14 @@ export function AppHeader() {
   const { session, signOut } = useAuth();
   const navigate = useNavigate();
 
-  const navItems = [
-    { to: "/receitas", label: "receitas" },
-    { to: "/minhas-receitas", label: "minhas receitas" },
-    { to: "/minha-despensa", label: "minha despensa" },
-  ] as const;
+  const navItems = session
+    ? ([
+        { to: "/receitas", label: "receitas" },
+        { to: "/minhas-receitas", label: "minhas receitas" },
+        { to: "/minha-despensa", label: "minha despensa" },
+        { to: "/lista-compras", label: "lista de compras" },
+      ] as const)
+    : ([{ to: "/receitas", label: "receitas" }] as const);
 
   const handleLogout = async () => {
     await signOut();

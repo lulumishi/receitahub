@@ -127,6 +127,9 @@ export function PantryChat() {
     }
   }
 
+  // Hide chat entirely for guests
+  if (!user) return null;
+
   return (
     <>
       {/* Floating button */}

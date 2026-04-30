@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.pantry-chat]
 verify_jwt = false
+
+[functions.ingredient-substitutes]
+verify_jwt = false
