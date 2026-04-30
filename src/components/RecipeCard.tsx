@@ -3,19 +3,27 @@ import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
+import { IngredientSubstitute } from "@/components/IngredientSubstitute";
 
-export function RecipeCard({ recipe }: { recipe: Recipe }) {
+export function RecipeCard({
+  recipe,
+  pantry = [],
+}: {
+  recipe: Recipe;
+  pantry?: string[];
+}) {
   const { session } = useAuth();
   const navigate = useNavigate();
   const [saved, setSaved] = useState(!!recipe.saved);
   const [saving, setSaving] = useState(false);
+  const [showIngredients, setShowIngredients] = useState(false);
 
   const handleSave = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     if (!session) {
-      navigate({ to: "/login" });
+      navigate({ to: "/cadastro" });
       return;
     }
 
@@ -31,12 +39,15 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
       difficulty: recipe.difficulty,
       diet: recipe.diet,
       description: recipe.description,
+      ingredients: recipe.ingredients ?? [],
       is_favorite: true,
     });
 
     setSaving(false);
     if (!error) setSaved(true);
   };
+
+  const ingredients = recipe.ingredients ?? [];
 
   return (
     <article className="group relative bg-charcoal-light rounded-2xl overflow-hidden border border-border hover:border-blush/40 transition-all duration-500 hover:-translate-y-1">
@@ -60,8 +71,8 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
           onClick={handleSave}
           disabled={saving || saved}
           className="absolute top-4 right-4 h-9 w-9 rounded-full bg-charcoal/80 backdrop-blur-md border border-border flex items-center justify-center hover:bg-blush hover:text-charcoal transition disabled:opacity-70"
-          aria-label={session ? "Salvar receita" : "Faça login para salvar"}
-          title={session ? (saved ? "Salva" : "Salvar receita") : "Faça login para salvar"}
+          aria-label={session ? "Salvar receita" : "Crie uma conta para salvar"}
+          title={session ? (saved ? "Salva" : "Salvar receita") : "Crie uma conta para salvar"}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -111,6 +122,31 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
             ))}
           </div>
         </div>
+
+        {ingredients.length > 0 && (
+          <div className="pt-2 border-t border-border">
+            <button
+              onClick={() => setShowIngredients((s) => !s)}
+              className="text-xs uppercase tracking-wider text-cream/60 hover:text-blush transition flex items-center gap-2 w-full"
+            >
+              <span>{showIngredients ? "ocultar" : "ver"} ingredientes ({ingredients.length})</span>
+              <span className="ml-auto">{showIngredients ? "−" : "+"}</span>
+            </button>
+            {showIngredients && (
+              <ul className="mt-3 space-y-2">
+                {ingredients.map((ing, i) => (
+                  <li
+                    key={i}
+                    className="flex items-center justify-between gap-2 text-sm text-cream/80"
+                  >
+                    <span className="truncate">{ing}</span>
+                    <IngredientSubstitute ingredient={ing} pantry={pantry} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
       </div>
     </article>
   );
