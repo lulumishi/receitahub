@@ -97,6 +97,23 @@ function RecipesPage() {
       />
       <AppHeader />
 
+      {isGuest && (
+        <div className="bg-blush/10 border-b border-blush/30">
+          <div className="max-w-7xl mx-auto px-6 lg:px-10 py-3 flex items-center gap-4 flex-wrap">
+            <span className="text-sm text-cream/80">
+              👋 Você está navegando como visitante. Crie uma conta para salvar receitas,
+              gerenciar sua despensa e usar o chat com IA.
+            </span>
+            <Link
+              to="/cadastro"
+              className="ml-auto px-4 py-1.5 rounded-full bg-blush text-charcoal text-xs font-medium hover:bg-blush-deep transition"
+            >
+              criar conta
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* HERO */}
       <section className="relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blush/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none" />
@@ -205,7 +222,7 @@ function RecipesPage() {
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((r) => (
-              <RecipeCard key={r.id} recipe={r} />
+              <RecipeCard key={r.id} recipe={r} pantry={pantry} />
             ))}
           </div>
         )}
