@@ -22,29 +22,31 @@ const DIET_FILTERS = ["vegano", "vegetariano", "sem glúten", "low carb"];
 
 // ─── DICIONÁRIO DE EMOJIS (ORDEM DE PRIORIDADE) ─────────────────────────────
 const CATEGORY_STYLE: Record<string, { emoji: string; bg: string }> = {
-  "moqueca":         { emoji: "🥘", bg: "from-orange-800/40 to-amber-700/20" },
-  "feijoada":        { emoji: "🍲", bg: "from-zinc-900/40 to-stone-800/20" },
-  "brigadeiro":      { emoji: "🍫", bg: "from-stone-800/60 to-stone-700/30" },
-  "açaí":            { emoji: "🥣", bg: "from-purple-900/40 to-indigo-800/20" },
-  "pão de queijo":   { emoji: "🥯", bg: "from-yellow-700/40 to-amber-600/20" },
-  "strogonoff":      { emoji: "🥘", bg: "from-orange-900/40 to-yellow-800/20" },
-  "risoto":          { emoji: "🍚", bg: "from-stone-200/40 to-amber-100/20" },
-  "empadão":         { emoji: "🥧", bg: "from-amber-800/40 to-orange-700/20" },
-  "coxinha":         { emoji: "🍗", bg: "from-orange-700/40 to-yellow-600/20" },
-  "pastel":          { emoji: "🥟", bg: "from-yellow-500/40 to-amber-400/20" },
-  "camarão":         { emoji: "🍤", bg: "from-orange-900/40 to-red-800/20" },
-  "peixe":           { emoji: "🐟", bg: "from-cyan-900/40 to-blue-800/20" },
-  "frango":          { emoji: "🍗", bg: "from-amber-900/40 to-amber-800/20" },
-  "carne":           { emoji: "🥩", bg: "from-red-900/40 to-red-800/20" },
-  "pizza":           { emoji: "🍕", bg: "from-red-800/40 to-yellow-700/20" },
-  "bolo":            { emoji: "🍰", bg: "from-pink-900/40 to-pink-800/20" },
-  "massa":           { emoji: "🍝", bg: "from-orange-900/40 to-orange-800/20" },
-  "salada":          { emoji: "🥗", bg: "from-green-900/40 to-green-800/20" },
-  "sobremesa":       { emoji: "🍰", bg: "from-pink-900/40 to-pink-800/20" },
-  "pães":            { emoji: "🍞", bg: "from-yellow-900/40 to-yellow-800/20" },
-  "sopa":            { emoji: "🍲", bg: "from-red-900/40 to-red-800/20" },
-  "prato principal": { emoji: "🍽️", bg: "from-amber-900/40 to-amber-800/20" },
-  "default":         { emoji: "🍴", bg: "from-zinc-800/60 to-zinc-700/30" },
+  // 1. Especialidades Brasileiras
+  "moqueca":         { emoji: "🥘", bg: "from-orange-600/30 to-amber-500/10" },
+  "feijoada":        { emoji: "🍲", bg: "from-zinc-700/40 to-stone-800/20" },
+  "brigadeiro":      { emoji: "🍫", bg: "from-stone-600/40 to-stone-800/20" },
+  "pão de queijo":   { emoji: "🥯", bg: "from-yellow-600/30 to-amber-500/10" },
+  "açaí":            { emoji: "🥣", bg: "from-purple-800/40 to-indigo-900/20" },
+  "coxinha":         { emoji: "🍗", bg: "from-orange-600/30 to-yellow-500/10" },
+  
+  // 2. Proteínas e Pratos Mundiais
+  "camarão":         { emoji: "🍤", bg: "from-orange-600/30 to-red-600/10" },
+  "peixe":           { emoji: "🐟", bg: "from-cyan-700/30 to-blue-600/10" },
+  "frango":          { emoji: "🍗", bg: "from-amber-600/30 to-orange-500/10" },
+  "carne":           { emoji: "🥩", bg: "from-red-700/30 to-red-900/10" },
+  "pizza":           { emoji: "🍕", bg: "from-red-600/30 to-yellow-500/10" },
+  "bolo":            { emoji: "🍰", bg: "from-pink-600/30 to-rose-500/10" },
+
+  // 3. Categorias Gerais
+  "massa":           { emoji: "🍝", bg: "from-orange-600/30 to-red-500/10" },
+  "salada":          { emoji: "🥗", bg: "from-green-600/30 to-emerald-500/10" },
+  "sobremesa":       { emoji: "🍰", bg: "from-pink-600/30 to-fuchsia-500/10" },
+  "pães":            { emoji: "🍞", bg: "from-yellow-600/30 to-amber-500/10" },
+  "sopa":            { emoji: "🍲", bg: "from-red-700/30 to-orange-600/10" },
+  "lanche":          { emoji: "🥪", bg: "from-lime-600/30 to-green-500/10" },
+  "prato principal": { emoji: "🥘", bg: "from-amber-600/30 to-yellow-500/10" },
+  "default":         { emoji: "🍽️", bg: "from-zinc-700/40 to-zinc-800/20" },
 };
 
 function getCategoryStyle(category: string, title: string) {
@@ -61,13 +63,16 @@ type Recipe = {
   ingredients: string[]; instructions: string; nutrition?: Nutrition;
 };
 
+// ─── Capa visual corrigida (Gradientes de volta!) ───────────────────────────
 function RecipeCover({ category, title, size = "card" }: { category: string; title: string; size?: "card" | "modal" }) {
   const { emoji, bg } = getCategoryStyle(category, title);
   const h = size === "modal" ? "h-56" : "aspect-[4/3]";
   return (
-    <div className={`${h} w-full bg-gradient-to-br ${bg} flex items-center justify-center relative overflow-hidden`} style={{ backgroundImage: 'none' }}>
-      <div className="absolute inset-0 bg-charcoal/30" />
-      <span className={`relative ${size === "modal" ? "text-8xl" : "text-7xl"} select-none`}>{emoji}</span>
+    <div className={`${h} w-full bg-gradient-to-br ${bg} flex items-center justify-center relative overflow-hidden`}>
+      <div className="absolute inset-0 bg-charcoal/20" />
+      <span className={`relative ${size === "modal" ? "text-8xl" : "text-7xl"} drop-shadow-2xl select-none`}>
+        {emoji}
+      </span>
     </div>
   );
 }
@@ -152,7 +157,7 @@ function RecipeCard({ recipe, pantry, onOpen }: { recipe: Recipe; pantry: string
 
 function RecipesPage() {
   const { session } = useAuth();
-  const isGuest = !session; // DEFINIÇÃO DA VARIÁVEL QUE FALTAVA
+  const isGuest = !session;
   const [activeCategory, setActiveCategory] = useState("todas");
   const [activeDiets, setActiveDiets] = useState<string[]>([]);
   const [search, setSearch] = useState("");
@@ -206,6 +211,16 @@ function RecipesPage() {
     <div className="min-h-screen bg-charcoal text-cream">
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Inter:wght@300;400;500;600&display=swap" />
       <AppHeader />
+      
+      {isGuest && (
+        <div className="bg-blush/10 border-b border-blush/30">
+          <div className="max-w-7xl mx-auto px-6 lg:px-10 py-3 flex items-center gap-4 flex-wrap">
+            <span className="text-sm text-cream/80">👋 Visitante: crie uma conta para salvar receitas.</span>
+            <Link to="/cadastro" className="ml-auto px-4 py-1.5 rounded-full bg-blush text-charcoal text-xs font-medium">criar conta</Link>
+          </div>
+        </div>
+      )}
+
       <section className="relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 lg:px-10 pt-20 pb-16 relative">
           <h1 className="text-5xl md:text-6xl text-cream leading-tight">Hoje você pode cozinhar<br /><em className="text-blush font-display italic">{loading ? "…" : `${filtered.length} receitas`}</em> sem ir ao mercado.</h1>
