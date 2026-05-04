@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") ?? "";
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY") ?? "";
+const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -17,16 +17,38 @@ Deno.serve(async (req) => {
     const dietPart = diet.length > 0 ? `As receitas devem ser: ${diet.join(", ")}.` : "";
     const ingredientsPart = ingredients.length > 0 ? `Use preferencialmente estes ingredientes: ${ingredients.join(", ")}.` : "";
     const searchPart = search ? `O usuário busca por: "${search}".` : "";
-    const prompt = `Você é um chef brasileiro. Gere exatamente 6 receitas ${categoryPart}. ${dietPart} ${ingredientsPart} ${searchPart} Responda APENAS com JSON válido sem markdown: {"recipes":[{"id":"rec-001","title":"Nome","description":"Descrição curta","category":"prato principal","time":"30 min","time_minutes":30,"difficulty":"fácil","diet":[],"servings":4,"ingredients":["2 xícaras de arroz"],"instructions":"1. Passo um.\\n2. Passo dois.","nutrition":{"calories":320,"protein":8,"carbs":60,"fat":5}}]}`;
-    const geminiRes = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
+    const systemPrompt = "Você é um chef brasileiro especialista. Sempre responde em JSON válido conforme solicitado, sem markdown, sem texto extra.";
+    const userPrompt = `Gere exatamente 6 receitas ${categoryPart}. ${dietPart} ${ingredientsPart} ${searchPart} Responda APENAS com JSON válido sem markdown no formato: {"recipes":[{"id":"rec-001","title":"Nome","description":"Descrição curta","category":"prato principal","time":"30 min","time_minutes":30,"difficulty":"fácil","diet":[],"servings":4,"ingredients":["2 xícaras de arroz"],"instructions":"1. Passo um.\\n2. Passo dois.","nutrition":{"calories":320,"protein":8,"carbs":60,"fat":5}}]}`;
+
+    const aiRes = await fetch(AI_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.8, maxOutputTokens: 4096 } }),
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        response_format: { type: "json_object" },
+      }),
     });
-    if (!geminiRes.ok) throw new Error(await geminiRes.text());
-    const geminiData = await geminiRes.json();
-    const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-    const cleaned = rawText.replace(/^```json\s*/i,"").replace(/^```\s*/i,"").replace(/\s*```$/i,"").trim();
+
+    if (!aiRes.ok) {
+      if (aiRes.status === 429) {
+        return new Response(JSON.stringify({ error: "Limite de requisições excedido. Tente novamente em instantes." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (aiRes.status === 402) {
+        return new Response(JSON.stringify({ error: "Créditos de IA esgotados. Adicione créditos no workspace Lovable." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      throw new Error(await aiRes.text());
+    }
+
+    const aiData = await aiRes.json();
+    const rawText = aiData?.choices?.[0]?.message?.content ?? "";
+    const cleaned = rawText.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim();
     const parsed = JSON.parse(cleaned);
     return new Response(JSON.stringify({ recipes: parsed.recipes ?? [] }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
