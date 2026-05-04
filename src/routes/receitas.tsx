@@ -21,9 +21,30 @@ export const Route = createFileRoute("/receitas")({
 const CATEGORY_FILTERS = ["todas", "prato principal", "massa", "salada", "sobremesa", "pães"];
 const DIET_FILTERS = ["vegano", "vegetariano", "sem glúten", "low carb"];
 
-// Emoji e cor de fundo por categoria
+// ─── Dicionário de Emojis Expandido ──────────────────────────────────────────
 const CATEGORY_STYLE: Record<string, { emoji: string; bg: string }> = {
-  "prato principal": { emoji: "🍗", bg: "from-amber-900/40 to-amber-800/20" },
+  // Proteínas e Pratos Específicos (Busca por palavra-chave no título)
+  "peixe":           { emoji: "🐟", bg: "from-cyan-900/40 to-blue-800/20" },
+  "camarão":         { emoji: "🍤", bg: "from-orange-900/40 to-red-800/20" },
+  "frutos do mar":   { emoji: "🐙", bg: "from-indigo-900/40 to-purple-800/20" },
+  "carne":           { emoji: "🥩", bg: "from-red-900/40 to-red-800/20" },
+  "frango":          { emoji: "🍗", bg: "from-amber-900/40 to-amber-800/20" },
+  "porco":           { emoji: "🥓", bg: "from-pink-900/40 to-rose-800/20" },
+  "hambúrguer":      { emoji: "🍔", bg: "from-yellow-900/40 to-orange-800/20" },
+  "pizza":           { emoji: "🍕", bg: "from-red-800/40 to-yellow-700/20" },
+  "ovo":             { emoji: "🍳", bg: "from-yellow-800/40 to-orange-700/20" },
+  "taco":            { emoji: "🌮", bg: "from-yellow-700/40 to-amber-600/20" },
+  "sushi":           { emoji: "🍣", bg: "from-red-900/40 to-zinc-800/20" },
+
+  // Doces e Sobremesas Específicas
+  "chocolate":       { emoji: "🍫", bg: "from-stone-800/60 to-stone-700/30" },
+  "bolo":            { emoji: "🍰", bg: "from-pink-900/40 to-pink-800/20" },
+  "sorvete":         { emoji: "🍦", bg: "from-blue-200/40 to-pink-200/20" },
+  "fruta":           { emoji: "🍎", bg: "from-green-900/40 to-red-800/20" },
+  "limão":           { emoji: "🍋", bg: "from-lime-800/40 to-yellow-600/20" },
+
+  // Categorias Gerais (Fallback)
+  "prato principal": { emoji: "🥘", bg: "from-amber-900/40 to-amber-800/20" },
   "massa":           { emoji: "🍝", bg: "from-orange-900/40 to-orange-800/20" },
   "salada":          { emoji: "🥗", bg: "from-green-900/40 to-green-800/20" },
   "sobremesa":       { emoji: "🍰", bg: "from-pink-900/40 to-pink-800/20" },
@@ -34,9 +55,10 @@ const CATEGORY_STYLE: Record<string, { emoji: string; bg: string }> = {
   "default":         { emoji: "🍽️", bg: "from-zinc-800/60 to-zinc-700/30" },
 };
 
-function getCategoryStyle(category: string) {
+function getCategoryStyle(category: string, title: string) {
+  const textToSearch = `${title} ${category}`.toLowerCase();
   const key = Object.keys(CATEGORY_STYLE).find((k) =>
-    category?.toLowerCase().includes(k)
+    textToSearch.includes(k)
   );
   return CATEGORY_STYLE[key ?? "default"];
 }
@@ -58,12 +80,15 @@ type Recipe = {
   nutrition?: Nutrition;
 };
 
-// ─── Capa visual da receita (emoji + gradiente) ───────────────────────────────
-function RecipeCover({ category, size = "card" }: { category: string; size?: "card" | "modal" }) {
-  const { emoji, bg } = getCategoryStyle(category);
+// ─── Capa visual da receita (Emoji + Gradiente Inteligente) ─────────────────
+function RecipeCover({ category, title, size = "card" }: { category: string; title: string; size?: "card" | "modal" }) {
+  const { emoji, bg } = getCategoryStyle(category, title);
   const h = size === "modal" ? "h-56" : "aspect-[4/3]";
   return (
-    <div className={`${h} w-full bg-gradient-to-br ${bg} flex items-center justify-center relative overflow-hidden`}>
+    <div 
+      className={`${h} w-full bg-gradient-to-br ${bg} flex items-center justify-center relative overflow-hidden`}
+      style={{ backgroundImage: 'none' }} 
+    >
       <div className="absolute inset-0 bg-charcoal/30" />
       <span className={`relative ${size === "modal" ? "text-8xl" : "text-7xl"} select-none`}>
         {emoji}
@@ -114,9 +139,8 @@ function RecipeModal({
         className="relative z-10 bg-charcoal border border-border rounded-t-3xl md:rounded-3xl w-full md:max-w-2xl max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Capa com emoji */}
         <div className="relative rounded-t-3xl overflow-hidden">
-          <RecipeCover category={recipe.category} size="modal" />
+          <RecipeCover category={recipe.category} title={recipe.title} size="modal" />
           <button
             onClick={onClose}
             className="absolute top-4 right-4 h-8 w-8 flex items-center justify-center rounded-full bg-charcoal/80 text-cream hover:bg-charcoal transition text-lg"
@@ -136,7 +160,6 @@ function RecipeModal({
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Meta */}
           <div className="flex gap-4 text-sm text-cream/60">
             <span>⏱ {recipe.time}</span>
             <span>📊 {recipe.difficulty}</span>
@@ -145,7 +168,6 @@ function RecipeModal({
 
           <p className="text-cream/70 text-sm leading-relaxed">{recipe.description}</p>
 
-          {/* Ajuste de porções */}
           <div className="bg-charcoal-light border border-border rounded-2xl p-4">
             <div className="flex items-center justify-between mb-1">
               <span className="text-sm text-cream/70">Porções</span>
@@ -161,7 +183,6 @@ function RecipeModal({
             </div>
           </div>
 
-          {/* Ingredientes */}
           <div>
             <h3 className="text-xs uppercase tracking-widest text-blush mb-3">Ingredientes</h3>
             <ul className="space-y-2">
@@ -174,7 +195,6 @@ function RecipeModal({
             </ul>
           </div>
 
-          {/* Modo de preparo */}
           <div>
             <h3 className="text-xs uppercase tracking-widest text-blush mb-3">Modo de preparo</h3>
             <div className="text-sm text-cream/80 leading-relaxed whitespace-pre-line space-y-2">
@@ -184,7 +204,6 @@ function RecipeModal({
             </div>
           </div>
 
-          {/* Tabela nutricional */}
           {recipe.nutrition && (
             <div>
               <h3 className="text-xs uppercase tracking-widest text-blush mb-3">
@@ -208,7 +227,6 @@ function RecipeModal({
             </div>
           )}
 
-          {/* Botão salvar */}
           <button
             onClick={() => onSave(recipe)}
             disabled={saving || saved}
@@ -240,7 +258,7 @@ function RecipeCard({ recipe, pantry, onOpen }: { recipe: Recipe; pantry: string
       className="group cursor-pointer bg-charcoal-light rounded-2xl overflow-hidden border border-border hover:border-blush/40 transition-all"
     >
       <div className="relative overflow-hidden">
-        <RecipeCover category={recipe.category} size="card" />
+        <RecipeCover category={recipe.category} title={recipe.title} size="card" />
         <div className="absolute inset-0 bg-gradient-to-t from-charcoal/60 to-transparent" />
         {pantry.length > 0 && matchPct > 0 && (
           <div className="absolute top-3 right-3 bg-charcoal/80 backdrop-blur-sm rounded-full px-2.5 py-1 text-xs text-blush">
@@ -473,3 +491,4 @@ function RecipesPage() {
     </div>
   );
 }
+```[cite: 1]
