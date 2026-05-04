@@ -1,11 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppHeader } from "@/components/AppHeader";
-import recipe1 from "@/assets/recipe-1.jpg";
-import recipe2 from "@/assets/recipe-2.jpg"; 
-import recipe3 from "@/assets/recipe-3.jpg";
-import recipe4 from "@/assets/recipe-4.jpg";
-import recipe5 from "@/assets/recipe-5.jpg";
-import recipe6 from "@/assets/recipe-6.jpg";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,7 +20,26 @@ export const Route = createFileRoute("/receitas")({
 
 const CATEGORY_FILTERS = ["todas", "prato principal", "massa", "salada", "sobremesa", "pães"];
 const DIET_FILTERS = ["vegano", "vegetariano", "sem glúten", "low carb"];
-const COVER_IMAGES = [recipe1, recipe2, recipe3, recipe4, recipe5, recipe6];
+
+// Emoji e cor de fundo por categoria
+const CATEGORY_STYLE: Record<string, { emoji: string; bg: string }> = {
+  "prato principal": { emoji: "🍗", bg: "from-amber-900/40 to-amber-800/20" },
+  "massa":           { emoji: "🍝", bg: "from-orange-900/40 to-orange-800/20" },
+  "salada":          { emoji: "🥗", bg: "from-green-900/40 to-green-800/20" },
+  "sobremesa":       { emoji: "🍰", bg: "from-pink-900/40 to-pink-800/20" },
+  "pães":            { emoji: "🍞", bg: "from-yellow-900/40 to-yellow-800/20" },
+  "sopa":            { emoji: "🍲", bg: "from-red-900/40 to-red-800/20" },
+  "café da manhã":   { emoji: "🥞", bg: "from-yellow-900/40 to-amber-800/20" },
+  "lanche":          { emoji: "🥪", bg: "from-lime-900/40 to-lime-800/20" },
+  "default":         { emoji: "🍽️", bg: "from-zinc-800/60 to-zinc-700/30" },
+};
+
+function getCategoryStyle(category: string) {
+  const key = Object.keys(CATEGORY_STYLE).find((k) =>
+    category?.toLowerCase().includes(k)
+  );
+  return CATEGORY_STYLE[key ?? "default"];
+}
 
 type Nutrition = { calories: number; protein: number; carbs: number; fat: number };
 
@@ -43,8 +56,21 @@ type Recipe = {
   ingredients: string[];
   instructions: string;
   nutrition?: Nutrition;
-  image: string;
 };
+
+// ─── Capa visual da receita (emoji + gradiente) ───────────────────────────────
+function RecipeCover({ category, size = "card" }: { category: string; size?: "card" | "modal" }) {
+  const { emoji, bg } = getCategoryStyle(category);
+  const h = size === "modal" ? "h-56" : "aspect-[4/3]";
+  return (
+    <div className={`${h} w-full bg-gradient-to-br ${bg} flex items-center justify-center relative overflow-hidden`}>
+      <div className="absolute inset-0 bg-charcoal/30" />
+      <span className={`relative ${size === "modal" ? "text-8xl" : "text-7xl"} select-none`}>
+        {emoji}
+      </span>
+    </div>
+  );
+}
 
 // ─── Modal de detalhes da receita ────────────────────────────────────────────
 function RecipeModal({
@@ -63,14 +89,12 @@ function RecipeModal({
   const [servings, setServings] = useState(recipe.servings ?? 4);
   const ratio = servings / (recipe.servings ?? 4);
 
-  // Fecha com ESC
   useEffect(() => {
     const handler = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  // Escala a quantidade numérica de um ingrediente pelo ratio de porções
   function scaleIngredient(text: string): string {
     return text.replace(/(\d+[\d.,/]*)/g, (match) => {
       const num = parseFloat(match.replace(",", "."));
@@ -85,22 +109,14 @@ function RecipeModal({
       className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-6"
       onClick={onClose}
     >
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-
-      {/* Card */}
       <div
         className="relative z-10 bg-charcoal border border-border rounded-t-3xl md:rounded-3xl w-full md:max-w-2xl max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Imagem de capa */}
-        <div className="relative h-56 overflow-hidden rounded-t-3xl md:rounded-t-3xl">
-          <img
-            src={recipe.image}
-            alt={recipe.title}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-charcoal via-charcoal/30 to-transparent" />
+        {/* Capa com emoji */}
+        <div className="relative rounded-t-3xl overflow-hidden">
+          <RecipeCover category={recipe.category} size="modal" />
           <button
             onClick={onClose}
             className="absolute top-4 right-4 h-8 w-8 flex items-center justify-center rounded-full bg-charcoal/80 text-cream hover:bg-charcoal transition text-lg"
@@ -115,7 +131,7 @@ function RecipeModal({
                 </span>
               ))}
             </div>
-            <h2 className="font-display text-3xl text-cream leading-tight">{recipe.title}</h2>
+            <h2 className="font-display text-3xl text-cream leading-tight drop-shadow-lg">{recipe.title}</h2>
           </div>
         </div>
 
@@ -136,11 +152,7 @@ function RecipeModal({
               <span className="text-sm font-medium text-cream">{servings}</span>
             </div>
             <input
-              type="range"
-              min={1}
-              max={12}
-              step={1}
-              value={servings}
+              type="range" min={1} max={12} step={1} value={servings}
               onChange={(e) => setServings(Number(e.target.value))}
               className="w-full accent-[#C97B84]"
             />
@@ -176,7 +188,8 @@ function RecipeModal({
           {recipe.nutrition && (
             <div>
               <h3 className="text-xs uppercase tracking-widest text-blush mb-3">
-                Informação nutricional <span className="text-cream/40 normal-case">(por porção, estimativa via IA)</span>
+                Informação nutricional{" "}
+                <span className="text-cream/40 normal-case">(por porção, estimativa via IA)</span>
               </h3>
               <div className="grid grid-cols-4 gap-3">
                 {[
@@ -214,15 +227,7 @@ function RecipeModal({
 }
 
 // ─── Card da receita ──────────────────────────────────────────────────────────
-function RecipeCard({
-  recipe,
-  pantry,
-  onOpen,
-}: {
-  recipe: Recipe;
-  pantry: string[];
-  onOpen: (r: Recipe) => void;
-}) {
+function RecipeCard({ recipe, pantry, onOpen }: { recipe: Recipe; pantry: string[]; onOpen: (r: Recipe) => void }) {
   const pantryMatch = pantry.filter((p) =>
     recipe.ingredients?.some((ing) => ing.toLowerCase().includes(p.toLowerCase()))
   ).length;
@@ -234,15 +239,10 @@ function RecipeCard({
       onClick={() => onOpen(recipe)}
       className="group cursor-pointer bg-charcoal-light rounded-2xl overflow-hidden border border-border hover:border-blush/40 transition-all"
     >
-      <div className="relative aspect-[4/3] overflow-hidden">
-        <img
-          src={recipe.image}
-          alt={recipe.title}
-          loading="lazy"
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 to-transparent" />
-        {pantry.length > 0 && (
+      <div className="relative overflow-hidden">
+        <RecipeCover category={recipe.category} size="card" />
+        <div className="absolute inset-0 bg-gradient-to-t from-charcoal/60 to-transparent" />
+        {pantry.length > 0 && matchPct > 0 && (
           <div className="absolute top-3 right-3 bg-charcoal/80 backdrop-blur-sm rounded-full px-2.5 py-1 text-xs text-blush">
             {matchPct}% na despensa
           </div>
@@ -256,7 +256,9 @@ function RecipeCard({
         </div>
       </div>
       <div className="p-5">
-        <div className="text-xs uppercase tracking-widest text-blush/80 mb-1">{recipe.category} · {recipe.time}</div>
+        <div className="text-xs uppercase tracking-widest text-blush/80 mb-1">
+          {recipe.category} · {recipe.time}
+        </div>
         <h3 className="font-display text-xl text-cream leading-tight mb-2 group-hover:text-blush transition-colors">
           {recipe.title}
         </h3>
@@ -282,7 +284,6 @@ function RecipesPage() {
   const [saving, setSaving] = useState(false);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
 
-  // Carrega despensa do usuário logado
   useEffect(() => {
     if (!session) { setPantry([]); return; }
     void (async () => {
@@ -291,7 +292,6 @@ function RecipesPage() {
     })();
   }, [session]);
 
-  // Gera receitas via Edge Function
   async function loadRecipes(category: string, diets: string[]) {
     setLoading(true);
     setError(null);
@@ -299,16 +299,9 @@ function RecipesPage() {
       const { data, error: fnError } = await supabase.functions.invoke("generate-recipes", {
         body: { category, diet: diets, ingredients: pantry, search },
       });
-
       if (fnError) throw fnError;
       if (data?.error) throw new Error(data.error);
-
-      const generated: Omit<Recipe, "image">[] = data?.recipes ?? [];
-      const withImages: Recipe[] = generated.map((r, i) => ({
-        ...r,
-        image: COVER_IMAGES[i % COVER_IMAGES.length],
-      }));
-      setRecipes(withImages);
+      setRecipes(data?.recipes ?? []);
     } catch (e) {
       console.error(e);
       setError(e instanceof Error ? e.message : "Erro ao carregar receitas");
@@ -325,7 +318,6 @@ function RecipesPage() {
     );
   }
 
-  // Salva receita na tabela user_recipes do Supabase
   async function handleSave(recipe: Recipe) {
     if (!session) return;
     setSaving(true);
@@ -372,7 +364,6 @@ function RecipesPage() {
         </div>
       )}
 
-      {/* HERO */}
       <section className="relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blush/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4 pointer-events-none" />
         <div className="max-w-7xl mx-auto px-6 lg:px-10 pt-20 pb-16 relative">
@@ -393,7 +384,6 @@ function RecipesPage() {
             </p>
           </div>
 
-          {/* Busca e filtros */}
           <div className="mt-12 space-y-4">
             <div className="relative max-w-2xl">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-cream/40">
@@ -407,52 +397,37 @@ function RecipesPage() {
               />
             </div>
 
-            {/* Filtros de categoria */}
             <div className="flex flex-wrap items-center gap-2">
               {CATEGORY_FILTERS.map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setActiveCategory(f)}
+                <button key={f} onClick={() => setActiveCategory(f)}
                   className={`px-4 py-2 rounded-full text-sm capitalize transition border ${
                     activeCategory === f
                       ? "bg-blush text-charcoal border-blush"
                       : "bg-transparent text-cream/70 border-border hover:border-blush/40 hover:text-cream"
                   }`}
-                >
-                  {f}
-                </button>
+                >{f}</button>
               ))}
             </div>
 
-            {/* Filtros de dieta — agora funcionais! */}
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs text-cream/40 uppercase tracking-wider">dieta:</span>
               {DIET_FILTERS.map((f) => (
-                <button
-                  key={f}
-                  onClick={() => toggleDiet(f)}
+                <button key={f} onClick={() => toggleDiet(f)}
                   className={`px-4 py-2 rounded-full text-sm capitalize transition border ${
                     activeDiets.includes(f)
                       ? "bg-blush/20 text-blush border-blush/50"
                       : "bg-transparent text-cream/60 border-border hover:text-blush hover:border-blush/40"
                   }`}
-                >
-                  {f}
-                </button>
+                >{f}</button>
               ))}
-              <button
-                onClick={() => loadRecipes(activeCategory, activeDiets)}
-                disabled={loading}
+              <button onClick={() => loadRecipes(activeCategory, activeDiets)} disabled={loading}
                 className="ml-auto px-4 py-2 rounded-full text-sm border border-blush/40 text-blush hover:bg-blush hover:text-charcoal transition disabled:opacity-50"
-              >
-                {loading ? "Gerando…" : "↻ Gerar novas"}
-              </button>
+              >{loading ? "Gerando…" : "↻ Gerar novas"}</button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* GRID DE RECEITAS */}
       <section className="max-w-7xl mx-auto px-6 lg:px-10 pb-24">
         <div className="flex items-baseline justify-between mb-8">
           <h2 className="font-display text-3xl text-cream">
@@ -464,9 +439,7 @@ function RecipesPage() {
         </div>
 
         {error && (
-          <div className="mb-6 p-4 rounded-xl border border-red-500/30 bg-red-500/10 text-red-200 text-sm">
-            {error}
-          </div>
+          <div className="mb-6 p-4 rounded-xl border border-red-500/30 bg-red-500/10 text-red-200 text-sm">{error}</div>
         )}
 
         {loading ? (
@@ -484,13 +457,10 @@ function RecipesPage() {
         )}
 
         {!loading && filtered.length === 0 && !error && (
-          <div className="text-center py-20 text-cream/50">
-            Nenhuma receita encontrada. Tente outro filtro.
-          </div>
+          <div className="text-center py-20 text-cream/50">Nenhuma receita encontrada. Tente outro filtro.</div>
         )}
       </section>
 
-      {/* Modal de detalhes */}
       {selectedRecipe && (
         <RecipeModal
           recipe={selectedRecipe}
