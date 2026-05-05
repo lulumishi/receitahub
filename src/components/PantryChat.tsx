@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { MessageCircle, X, Send, Loader2, Sparkles } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, Sparkles, BookmarkPlus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,11 +12,74 @@ type Msg = { role: "user" | "assistant"; content: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pantry-chat`;
 
+// Detecta se a mensagem contém uma receita (tem ingredientes + modo de preparo)
+function detectRecipe(content: string): boolean {
+  const lower = content.toLowerCase();
+  const hasIngredients =
+    lower.includes("ingrediente") ||
+    lower.includes("xícara") ||
+    lower.includes("colher") ||
+    lower.includes("gramas") ||
+    lower.includes("g de ") ||
+    lower.includes("ml de ");
+  const hasInstructions =
+    lower.includes("preparo") ||
+    lower.includes("modo de fazer") ||
+    lower.includes("passo") ||
+    lower.includes("refog") ||
+    lower.includes("cozinhe") ||
+    lower.includes("ferv") ||
+    lower.includes("misture") ||
+    lower.includes("adicione") ||
+    lower.includes("finaliz");
+  return hasIngredients && hasInstructions;
+}
+
+// Extrai título da receita do texto
+function extractTitle(content: string): string {
+  // Tenta pegar o primeiro título markdown (# ou **)
+  const markdownTitle = content.match(/^#{1,3}\s+(.+)/m)?.[1];
+  if (markdownTitle) return markdownTitle.trim();
+  const boldTitle = content.match(/\*\*(.{5,60})\*\*/)?.[1];
+  if (boldTitle) return boldTitle.trim();
+  // Fallback: primeira linha não vazia
+  const firstLine = content.split("\n").find((l) => l.trim().length > 3);
+  return firstLine?.replace(/[#*]/g, "").trim() ?? "Receita do Chef";
+}
+
+// Extrai ingredientes do texto (linhas com hífen ou número após "ingrediente")
+function extractIngredients(content: string): string[] {
+  const lines = content.split("\n");
+  const ingredients: string[] = [];
+  let inIngredientSection = false;
+
+  for (const line of lines) {
+    const lower = line.toLowerCase();
+    if (lower.includes("ingredient")) { inIngredientSection = true; continue; }
+    if (lower.includes("preparo") || lower.includes("modo") || lower.includes("passo")) {
+      inIngredientSection = false;
+    }
+    if (inIngredientSection && (line.trim().startsWith("-") || /^\d+\./.test(line.trim()))) {
+      ingredients.push(line.replace(/^[-\d.]\s*/, "").trim());
+    }
+  }
+  return ingredients.length > 0 ? ingredients : [];
+}
+
+// Extrai modo de preparo
+function extractInstructions(content: string): string {
+  const match = content.match(
+    /(?:modo de preparo|preparo|como fazer|passo a passo)[:\s]*([\s\S]+?)(?:\n#{1,3}|\n\*\*[^*]+\*\*|$)/i
+  );
+  return match?.[1]?.trim() ?? content;
+}
+
 export function PantryChat() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [savedMsgIndexes, setSavedMsgIndexes] = useState<Set<number>>(new Set());
   const [messages, setMessages] = useState<Msg[]>([
     {
       role: "assistant",
@@ -36,18 +99,42 @@ export function PantryChat() {
       .from("pantry_items")
       .select("name, quantity, category")
       .eq("user_id", user.id);
-    if (error) {
-      console.error("pantry fetch", error);
-      return [];
-    }
+    if (error) { console.error("pantry fetch", error); return []; }
     return data ?? [];
+  }
+
+  async function saveRecipe(msgIndex: number) {
+    if (!user) return;
+    const content = messages[msgIndex]?.content;
+    if (!content) return;
+
+    const title = extractTitle(content);
+    const ingredients = extractIngredients(content);
+    const instructions = extractInstructions(content);
+
+    const { error } = await supabase.from("user_recipes").insert({
+      user_id: user.id,
+      title,
+      description: `Receita sugerida pelo Chef Despensa`,
+      category: "prato principal",
+      ingredients: ingredients.length > 0 ? ingredients : null,
+      instructions,
+      diet: [],
+      is_favorite: false,
+    });
+
+    if (error) {
+      toast.error("Erro ao salvar a receita.");
+    } else {
+      setSavedMsgIndexes((prev) => new Set(prev).add(msgIndex));
+      toast.success(`"${title}" salva em Minhas Receitas! 🎉`);
+    }
   }
 
   async function send() {
     const text = input.trim();
     if (!text || loading) return;
     setInput("");
-
     const userMsg: Msg = { role: "user", content: text };
     const next = [...messages, userMsg];
     setMessages(next);
@@ -55,7 +142,6 @@ export function PantryChat() {
 
     try {
       const pantry = await fetchPantry();
-
       const resp = await fetch(CHAT_URL, {
         method: "POST",
         headers: {
@@ -76,7 +162,6 @@ export function PantryChat() {
         return;
       }
 
-      // Add empty assistant message for streaming
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
       const reader = resp.body.getReader();
@@ -98,10 +183,7 @@ export function PantryChat() {
           if (line.startsWith(":") || line.trim() === "") continue;
           if (!line.startsWith("data: ")) continue;
           const jsonStr = line.slice(6).trim();
-          if (jsonStr === "[DONE]") {
-            streamDone = true;
-            break;
-          }
+          if (jsonStr === "[DONE]") { streamDone = true; break; }
           try {
             const parsed = JSON.parse(jsonStr);
             const content = parsed.choices?.[0]?.delta?.content as string | undefined;
@@ -127,7 +209,6 @@ export function PantryChat() {
     }
   }
 
-  // Hide chat entirely for guests
   if (!user) return null;
 
   return (
@@ -151,37 +232,64 @@ export function PantryChat() {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-24 right-5 z-50 flex h-[min(560px,80vh)] w-[min(380px,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
+        <div className="fixed bottom-24 right-5 z-50 flex h-[min(580px,80vh)] w-[min(380px,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
+          {/* Header */}
           <div className="flex items-center gap-2 border-b border-border bg-primary px-4 py-3 text-primary-foreground">
             <Sparkles className="h-4 w-4" />
             <div className="flex-1">
               <p className="text-sm font-semibold">Chef Despensa</p>
-              <p className="text-[11px] opacity-80">
-                {user ? "Vendo sua despensa em tempo real" : "Faça login para usar sua despensa"}
-              </p>
+              <p className="text-[11px] opacity-80">Vendo sua despensa em tempo real</p>
             </div>
           </div>
 
+          {/* Messages */}
           <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
-            {messages.map((m, i) => (
-              <div
-                key={i}
-                className={cn(
-                  "max-w-[85%] rounded-2xl px-3 py-2 text-sm",
-                  m.role === "user"
-                    ? "ml-auto bg-primary text-primary-foreground"
-                    : "bg-muted text-foreground"
-                )}
-              >
-                {m.role === "assistant" ? (
-                  <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-strong:text-foreground dark:prose-invert">
-                    <ReactMarkdown>{m.content || "..."}</ReactMarkdown>
+            {messages.map((m, i) => {
+              const isAssistant = m.role === "assistant";
+              const hasRecipe = isAssistant && detectRecipe(m.content);
+              const isSaved = savedMsgIndexes.has(i);
+              const isStreaming = loading && i === messages.length - 1 && isAssistant;
+
+              return (
+                <div key={i} className={cn("flex flex-col", !isAssistant && "items-end")}>
+                  <div
+                    className={cn(
+                      "max-w-[85%] rounded-2xl px-3 py-2 text-sm",
+                      isAssistant ? "bg-muted text-foreground" : "bg-primary text-primary-foreground"
+                    )}
+                  >
+                    {isAssistant ? (
+                      <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-strong:text-foreground dark:prose-invert">
+                        <ReactMarkdown>{m.content || "..."}</ReactMarkdown>
+                      </div>
+                    ) : (
+                      <p className="whitespace-pre-wrap">{m.content}</p>
+                    )}
                   </div>
-                ) : (
-                  <p className="whitespace-pre-wrap">{m.content}</p>
-                )}
-              </div>
-            ))}
+
+                  {/* Botão salvar receita — aparece abaixo da mensagem do chef quando detecta receita */}
+                  {hasRecipe && !isStreaming && (
+                    <button
+                      onClick={() => saveRecipe(i)}
+                      disabled={isSaved}
+                      className={cn(
+                        "mt-1.5 flex items-center gap-1.5 self-start rounded-full px-3 py-1.5 text-xs font-medium transition-all border",
+                        isSaved
+                          ? "border-green-500/40 bg-green-500/10 text-green-400 cursor-default"
+                          : "border-border bg-background text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5"
+                      )}
+                    >
+                      {isSaved ? (
+                        <><Check className="h-3 w-3" /> Salva em Minhas Receitas!</>
+                      ) : (
+                        <><BookmarkPlus className="h-3 w-3" /> Salvar esta receita</>
+                      )}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+
             {loading && messages[messages.length - 1]?.role === "user" && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Loader2 className="h-3 w-3 animate-spin" /> pensando...
@@ -189,11 +297,9 @@ export function PantryChat() {
             )}
           </div>
 
+          {/* Input */}
           <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              send();
-            }}
+            onSubmit={(e) => { e.preventDefault(); send(); }}
             className="flex gap-2 border-t border-border bg-background p-3"
           >
             <Input
