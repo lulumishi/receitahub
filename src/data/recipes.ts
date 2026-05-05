@@ -17,6 +17,8 @@ export type Recipe = {
   matchPercent: number;
   saved?: boolean;
   ingredients?: string[];
+  instructions?: string;
+  time_minutes?: number;
 };
 
 export const recipes: Recipe[] = [
