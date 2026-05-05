@@ -40,6 +40,7 @@ export function RecipeCard({
       diet: recipe.diet,
       description: recipe.description,
       ingredients: recipe.ingredients ?? [],
+      instructions: recipe.instructions ?? null,
       is_favorite: true,
     });
 
