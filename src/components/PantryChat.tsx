@@ -12,9 +12,37 @@ type Msg = { role: "user" | "assistant"; content: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pantry-chat`;
 
+const normalizeText = (value: string) =>
+  value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+function cleanMarkdownLine(value: string) {
+  return value
+    .replace(/^\s*(?:[-*•]|\d+[.)])\s+/, "")
+    .replace(/^#{1,6}\s*/, "")
+    .replace(/\*\*/g, "")
+    .replace(/[`_]/g, "")
+    .trim();
+}
+
+function isKnownSectionHeading(line: string) {
+  const cleaned = cleanMarkdownLine(line).replace(/:$/, "").trim();
+  const normalized = normalizeText(cleaned);
+  return cleaned.length <= 48 && /^(ingredientes?|modo de preparo|preparo|como fazer|passo a passo|instrucoes?|detalhes?|tempo|rendimento|porcoes?|dificuldade|categoria|dicas?|observacoes?)$/.test(normalized);
+}
+
+function isIngredientHeading(line: string) {
+  return normalizeText(cleanMarkdownLine(line)).includes("ingrediente");
+}
+
+function isInstructionHeading(line: string) {
+  return /(modo de preparo|preparo|modo de fazer|como fazer|passo a passo|instrucoes?)/.test(
+    normalizeText(cleanMarkdownLine(line))
+  );
+}
+
 // Detecta se a mensagem contém uma receita (tem ingredientes + modo de preparo)
 function detectRecipe(content: string): boolean {
-  const lower = content.toLowerCase();
+  const lower = normalizeText(content);
   const hasIngredients =
     lower.includes("ingrediente") ||
     lower.includes("xícara") ||
@@ -44,34 +72,100 @@ function extractTitle(content: string): string {
   if (boldTitle) return boldTitle.trim();
   // Fallback: primeira linha não vazia
   const firstLine = content.split("\n").find((l) => l.trim().length > 3);
-  return firstLine?.replace(/[#*]/g, "").trim() ?? "Receita do Chef";
+  return firstLine ? cleanMarkdownLine(firstLine) : "Receita do Chef";
 }
 
-// Extrai ingredientes do texto (linhas com hífen ou número após "ingrediente")
+// Extrai ingredientes mesmo quando o chef usa markdown, emojis ou lista numerada
 function extractIngredients(content: string): string[] {
   const lines = content.split("\n");
   const ingredients: string[] = [];
   let inIngredientSection = false;
 
   for (const line of lines) {
-    const lower = line.toLowerCase();
-    if (lower.includes("ingredient")) { inIngredientSection = true; continue; }
-    if (lower.includes("preparo") || lower.includes("modo") || lower.includes("passo")) {
-      inIngredientSection = false;
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    if (isIngredientHeading(trimmed)) {
+      inIngredientSection = true;
+      continue;
     }
-    if (inIngredientSection && (line.trim().startsWith("-") || /^\d+\./.test(line.trim()))) {
-      ingredients.push(line.replace(/^[-\d.]\s*/, "").trim());
+
+    if (inIngredientSection && isKnownSectionHeading(trimmed)) break;
+
+    if (inIngredientSection) {
+      const cleaned = cleanMarkdownLine(trimmed);
+      if (cleaned && !isKnownSectionHeading(cleaned) && cleaned.length <= 140) ingredients.push(cleaned);
     }
   }
+
   return ingredients.length > 0 ? ingredients : [];
 }
 
 // Extrai modo de preparo
 function extractInstructions(content: string): string {
-  const match = content.match(
-    /(?:modo de preparo|preparo|como fazer|passo a passo)[:\s]*([\s\S]+?)(?:\n#{1,3}|\n\*\*[^*]+\*\*|$)/i
-  );
-  return match?.[1]?.trim() ?? content;
+  const lines = content.split("\n");
+  const steps: string[] = [];
+  let inInstructionSection = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    if (isInstructionHeading(trimmed)) {
+      inInstructionSection = true;
+      const inlineStep = cleanMarkdownLine(trimmed).replace(/^(modo de preparo|preparo|modo de fazer|como fazer|passo a passo|instruções?)\s*:?\s*/i, "").trim();
+      if (inlineStep) steps.push(inlineStep);
+      continue;
+    }
+
+    if (inInstructionSection && isKnownSectionHeading(trimmed)) break;
+    if (inInstructionSection) steps.push(cleanMarkdownLine(trimmed));
+  }
+
+  return steps.length > 0 ? steps.join("\n") : content.trim();
+}
+
+function extractTimeMinutes(content: string): number | null {
+  const hourMatch = normalizeText(content).match(/(\d+(?:[,.]\d+)?)\s*(?:h|hora|horas)\b/);
+  const minuteMatch = normalizeText(content).match(/(\d{1,3})\s*(?:min|minuto|minutos)\b/);
+  const hours = hourMatch ? Number(hourMatch[1].replace(",", ".")) * 60 : 0;
+  const minutes = minuteMatch ? Number(minuteMatch[1]) : 0;
+  const total = hours + minutes;
+  return total > 0 ? Math.round(total) : null;
+}
+
+function extractDifficulty(content: string): string | null {
+  const lower = normalizeText(content);
+  if (lower.includes("dificil")) return "difícil";
+  if (lower.includes("medio")) return "médio";
+  if (lower.includes("facil")) return "fácil";
+  return null;
+}
+
+function extractDiet(content: string): string[] {
+  const lower = normalizeText(content);
+  const diets = [
+    ["sem gluten", "sem glúten"],
+    ["sem lactose", "sem lactose"],
+    ["vegetariano", "vegetariano"],
+    ["vegano", "vegano"],
+    ["low carb", "low carb"],
+  ];
+  return diets.filter(([needle]) => lower.includes(needle)).map(([, label]) => label);
+}
+
+function extractCategory(content: string): string {
+  const match = content.match(/categoria\s*:\s*([^\n]+)/i);
+  return match ? cleanMarkdownLine(match[1]).toLowerCase() : "prato principal";
+}
+
+function extractDescription(content: string, title: string): string {
+  const titleNormalized = normalizeText(title);
+  const line = content
+    .split("\n")
+    .map(cleanMarkdownLine)
+    .find((item) => item.length >= 24 && item.length <= 180 && !isKnownSectionHeading(item) && normalizeText(item) !== titleNormalized);
+  return line ?? "Receita sugerida pelo Chef Despensa";
 }
 
 export function PantryChat() {
