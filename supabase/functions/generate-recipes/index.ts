@@ -36,6 +36,7 @@ Deno.serve(async (req) => {
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
+        temperature: 1.1,
         response_format: { type: "json_object" },
       }),
     });
