@@ -205,15 +205,18 @@ export function PantryChat() {
     const title = extractTitle(content);
     const ingredients = extractIngredients(content);
     const instructions = extractInstructions(content);
+    const description = extractDescription(content, title);
 
     const { error } = await supabase.from("user_recipes").insert({
       user_id: user.id,
       title,
-      description: `Receita sugerida pelo Chef Despensa`,
-      category: "prato principal",
+      description,
+      category: extractCategory(content),
+      time_minutes: extractTimeMinutes(content),
+      difficulty: extractDifficulty(content),
       ingredients: ingredients.length > 0 ? ingredients : null,
       instructions,
-      diet: [],
+      diet: extractDiet(content),
       is_favorite: false,
     });
 
