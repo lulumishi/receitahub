@@ -12,9 +12,45 @@ type Msg = { role: "user" | "assistant"; content: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pantry-chat`;
 
+const normalizeText = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+function cleanMarkdownLine(value: string) {
+  return value
+    .replace(/^\s*(?:[-*•]|\d+[.)])\s+/, "")
+    .replace(/^#{1,6}\s*/, "")
+    .replace(/\*\*/g, "")
+    .replace(/[`_]/g, "")
+    .trim();
+}
+
+function isKnownSectionHeading(line: string) {
+  const cleaned = cleanMarkdownLine(line).replace(/:$/, "").trim();
+  const normalized = normalizeText(cleaned);
+  return (
+    cleaned.length <= 48 &&
+    /^(ingredientes?|modo de preparo|preparo|como fazer|passo a passo|instrucoes?|detalhes?|tempo|rendimento|porcoes?|dificuldade|categoria|dicas?|observacoes?)$/.test(
+      normalized,
+    )
+  );
+}
+
+function isIngredientHeading(line: string) {
+  return normalizeText(cleanMarkdownLine(line)).includes("ingrediente");
+}
+
+function isInstructionHeading(line: string) {
+  return /(modo de preparo|preparo|modo de fazer|como fazer|passo a passo|instrucoes?)/.test(
+    normalizeText(cleanMarkdownLine(line)),
+  );
+}
+
 // Detecta se a mensagem contém uma receita (tem ingredientes + modo de preparo)
 function detectRecipe(content: string): boolean {
-  const lower = content.toLowerCase();
+  const lower = normalizeText(content);
   const hasIngredients =
     lower.includes("ingrediente") ||
     lower.includes("xícara") ||
@@ -44,34 +80,112 @@ function extractTitle(content: string): string {
   if (boldTitle) return boldTitle.trim();
   // Fallback: primeira linha não vazia
   const firstLine = content.split("\n").find((l) => l.trim().length > 3);
-  return firstLine?.replace(/[#*]/g, "").trim() ?? "Receita do Chef";
+  return firstLine ? cleanMarkdownLine(firstLine) : "Receita do Chef";
 }
 
-// Extrai ingredientes do texto (linhas com hífen ou número após "ingrediente")
+// Extrai ingredientes mesmo quando o chef usa markdown, emojis ou lista numerada
 function extractIngredients(content: string): string[] {
   const lines = content.split("\n");
   const ingredients: string[] = [];
   let inIngredientSection = false;
 
   for (const line of lines) {
-    const lower = line.toLowerCase();
-    if (lower.includes("ingredient")) { inIngredientSection = true; continue; }
-    if (lower.includes("preparo") || lower.includes("modo") || lower.includes("passo")) {
-      inIngredientSection = false;
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    if (isIngredientHeading(trimmed)) {
+      inIngredientSection = true;
+      continue;
     }
-    if (inIngredientSection && (line.trim().startsWith("-") || /^\d+\./.test(line.trim()))) {
-      ingredients.push(line.replace(/^[-\d.]\s*/, "").trim());
+
+    if (inIngredientSection && isKnownSectionHeading(trimmed)) break;
+
+    if (inIngredientSection) {
+      const cleaned = cleanMarkdownLine(trimmed);
+      if (cleaned && !isKnownSectionHeading(cleaned) && cleaned.length <= 140)
+        ingredients.push(cleaned);
     }
   }
+
   return ingredients.length > 0 ? ingredients : [];
 }
 
 // Extrai modo de preparo
 function extractInstructions(content: string): string {
-  const match = content.match(
-    /(?:modo de preparo|preparo|como fazer|passo a passo)[:\s]*([\s\S]+?)(?:\n#{1,3}|\n\*\*[^*]+\*\*|$)/i
-  );
-  return match?.[1]?.trim() ?? content;
+  const lines = content.split("\n");
+  const steps: string[] = [];
+  let inInstructionSection = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    if (isInstructionHeading(trimmed)) {
+      inInstructionSection = true;
+      const inlineStep = cleanMarkdownLine(trimmed)
+        .replace(
+          /^(modo de preparo|preparo|modo de fazer|como fazer|passo a passo|instruções?)\s*:?\s*/i,
+          "",
+        )
+        .trim();
+      if (inlineStep) steps.push(inlineStep);
+      continue;
+    }
+
+    if (inInstructionSection && isKnownSectionHeading(trimmed)) break;
+    if (inInstructionSection) steps.push(cleanMarkdownLine(trimmed));
+  }
+
+  return steps.length > 0 ? steps.join("\n") : content.trim();
+}
+
+function extractTimeMinutes(content: string): number | null {
+  const hourMatch = normalizeText(content).match(/(\d+(?:[,.]\d+)?)\s*(?:h|hora|horas)\b/);
+  const minuteMatch = normalizeText(content).match(/(\d{1,3})\s*(?:min|minuto|minutos)\b/);
+  const hours = hourMatch ? Number(hourMatch[1].replace(",", ".")) * 60 : 0;
+  const minutes = minuteMatch ? Number(minuteMatch[1]) : 0;
+  const total = hours + minutes;
+  return total > 0 ? Math.round(total) : null;
+}
+
+function extractDifficulty(content: string): string | null {
+  const lower = normalizeText(content);
+  if (lower.includes("dificil")) return "difícil";
+  if (lower.includes("medio")) return "médio";
+  if (lower.includes("facil")) return "fácil";
+  return null;
+}
+
+function extractDiet(content: string): string[] {
+  const lower = normalizeText(content);
+  const diets = [
+    ["sem gluten", "sem glúten"],
+    ["sem lactose", "sem lactose"],
+    ["vegetariano", "vegetariano"],
+    ["vegano", "vegano"],
+    ["low carb", "low carb"],
+  ];
+  return diets.filter(([needle]) => lower.includes(needle)).map(([, label]) => label);
+}
+
+function extractCategory(content: string): string {
+  const match = content.match(/categoria\s*:\s*([^\n]+)/i);
+  return match ? cleanMarkdownLine(match[1]).toLowerCase() : "prato principal";
+}
+
+function extractDescription(content: string, title: string): string {
+  const titleNormalized = normalizeText(title);
+  const line = content
+    .split("\n")
+    .map(cleanMarkdownLine)
+    .find(
+      (item) =>
+        item.length >= 24 &&
+        item.length <= 180 &&
+        !isKnownSectionHeading(item) &&
+        normalizeText(item) !== titleNormalized,
+    );
+  return line ?? "Receita sugerida pelo Chef Despensa";
 }
 
 export function PantryChat() {
@@ -84,7 +198,7 @@ export function PantryChat() {
     {
       role: "assistant",
       content:
-        "Oi! 👋 Sou seu chef virtual. Posso ver sua despensa e sugerir o que cozinhar. Me pergunta algo como **\"o que posso fazer no almoço?\"** 🍳",
+        'Oi! 👋 Sou seu chef virtual. Posso ver sua despensa e sugerir o que cozinhar. Me pergunta algo como **"o que posso fazer no almoço?"** 🍳',
     },
   ]);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -99,7 +213,10 @@ export function PantryChat() {
       .from("pantry_items")
       .select("name, quantity, category")
       .eq("user_id", user.id);
-    if (error) { console.error("pantry fetch", error); return []; }
+    if (error) {
+      console.error("pantry fetch", error);
+      return [];
+    }
     return data ?? [];
   }
 
@@ -111,15 +228,18 @@ export function PantryChat() {
     const title = extractTitle(content);
     const ingredients = extractIngredients(content);
     const instructions = extractInstructions(content);
+    const description = extractDescription(content, title);
 
     const { error } = await supabase.from("user_recipes").insert({
       user_id: user.id,
       title,
-      description: `Receita sugerida pelo Chef Despensa`,
-      category: "prato principal",
+      description,
+      category: extractCategory(content),
+      time_minutes: extractTimeMinutes(content),
+      difficulty: extractDifficulty(content),
       ingredients: ingredients.length > 0 ? ingredients : null,
       instructions,
-      diet: [],
+      diet: extractDiet(content),
       is_favorite: false,
     });
 
@@ -183,7 +303,10 @@ export function PantryChat() {
           if (line.startsWith(":") || line.trim() === "") continue;
           if (!line.startsWith("data: ")) continue;
           const jsonStr = line.slice(6).trim();
-          if (jsonStr === "[DONE]") { streamDone = true; break; }
+          if (jsonStr === "[DONE]") {
+            streamDone = true;
+            break;
+          }
           try {
             const parsed = JSON.parse(jsonStr);
             const content = parsed.choices?.[0]?.delta?.content as string | undefined;
@@ -219,7 +342,7 @@ export function PantryChat() {
         onClick={() => setOpen((o) => !o)}
         className={cn(
           "fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl transition-all hover:scale-105 active:scale-95",
-          open && "scale-90"
+          open && "scale-90",
         )}
       >
         {open ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
@@ -255,7 +378,9 @@ export function PantryChat() {
                   <div
                     className={cn(
                       "max-w-[85%] rounded-2xl px-3 py-2 text-sm",
-                      isAssistant ? "bg-muted text-foreground" : "bg-primary text-primary-foreground"
+                      isAssistant
+                        ? "bg-muted text-foreground"
+                        : "bg-primary text-primary-foreground",
                     )}
                   >
                     {isAssistant ? (
@@ -276,13 +401,17 @@ export function PantryChat() {
                         "mt-1.5 flex items-center gap-1.5 self-start rounded-full px-3 py-1.5 text-xs font-medium transition-all border",
                         isSaved
                           ? "border-green-500/40 bg-green-500/10 text-green-400 cursor-default"
-                          : "border-border bg-background text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5"
+                          : "border-border bg-background text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5",
                       )}
                     >
                       {isSaved ? (
-                        <><Check className="h-3 w-3" /> Salva em Minhas Receitas!</>
+                        <>
+                          <Check className="h-3 w-3" /> Salva em Minhas Receitas!
+                        </>
                       ) : (
-                        <><BookmarkPlus className="h-3 w-3" /> Salvar esta receita</>
+                        <>
+                          <BookmarkPlus className="h-3 w-3" /> Salvar esta receita
+                        </>
                       )}
                     </button>
                   )}
@@ -299,7 +428,10 @@ export function PantryChat() {
 
           {/* Input */}
           <form
-            onSubmit={(e) => { e.preventDefault(); send(); }}
+            onSubmit={(e) => {
+              e.preventDefault();
+              send();
+            }}
             className="flex gap-2 border-t border-border bg-background p-3"
           >
             <Input
@@ -310,7 +442,11 @@ export function PantryChat() {
               className="flex-1"
             />
             <Button type="submit" size="icon" disabled={loading || !input.trim()}>
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
             </Button>
           </form>
         </div>
