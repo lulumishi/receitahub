@@ -140,7 +140,17 @@ function LandingPage() {
           .order("created_at", { ascending: false })
           .limit(6);
         if (data && data.length >= 3) {
-          setFeatured(data);
+          setFeatured(data.map((r) => ({
+            id: r.id,
+            title: r.title,
+            category: r.category ?? "",
+            time_minutes: r.time_minutes ?? 0,
+            description: r.description ?? "",
+            ingredients: r.ingredients ?? [],
+            instructions: r.instructions ?? "",
+            difficulty: r.difficulty ?? "",
+            diet: r.diet ?? [],
+          })));
         } else {
           // Se não houver receitas salvas, gera via IA
           const { data: aiData } = await supabase.functions.invoke("generate-recipes", {
