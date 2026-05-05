@@ -12,13 +12,17 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
     const body = await req.json().catch(() => ({}));
-    const { category = "todas", diet = [], ingredients = [], search = "" } = body;
+    const { category = "todas", diet = [], ingredients = [], search = "", seed = "" } = body;
     const categoryPart = category && category !== "todas" ? `na categoria "${category}"` : "de qualquer categoria";
     const dietPart = diet.length > 0 ? `As receitas devem ser: ${diet.join(", ")}.` : "";
     const ingredientsPart = ingredients.length > 0 ? `Use preferencialmente estes ingredientes: ${ingredients.join(", ")}.` : "";
     const searchPart = search ? `O usuário busca por: "${search}".` : "";
-    const systemPrompt = "Você é um chef brasileiro especialista. Sempre responde em JSON válido conforme solicitado, sem markdown, sem texto extra.";
-    const userPrompt = `Gere exatamente 6 receitas ${categoryPart}. ${dietPart} ${ingredientsPart} ${searchPart} Responda APENAS com JSON válido sem markdown no formato: {"recipes":[{"id":"rec-001","title":"Nome","description":"Descrição curta","category":"prato principal","time":"30 min","time_minutes":30,"difficulty":"fácil","diet":[],"servings":4,"ingredients":["2 xícaras de arroz"],"instructions":"1. Passo um.\\n2. Passo dois.","nutrition":{"calories":320,"protein":8,"carbs":60,"fat":5}}]}`;
+    const variationSeed = seed || Math.random().toString(36).slice(2);
+    const inspirations = ["nordestina", "mineira", "paulista", "gaúcha", "baiana", "amazônica", "italiana abrasileirada", "japonesa abrasileirada", "árabe abrasileirada", "portuguesa", "caipira", "contemporânea", "vegetariana criativa", "comfort food", "de boteco", "de festa", "de domingo em família", "saudável", "low carb", "rápida do dia a dia"];
+    const picks = [...inspirations].sort(() => Math.random() - 0.5).slice(0, 3).join(", ");
+    const variationPart = `Surpreenda com receitas variadas e criativas — evite os clássicos óbvios. Inspire-se em estilos como: ${picks}. Token de variação (use para diversificar, não cite): ${variationSeed}.`;
+    const systemPrompt = "Você é um chef brasileiro especialista e criativo. Sempre varia as sugestões — nunca repita as mesmas receitas óbvias. Sempre responde em JSON válido conforme solicitado, sem markdown, sem texto extra.";
+    const userPrompt = `Gere exatamente 6 receitas ${categoryPart}. ${dietPart} ${ingredientsPart} ${searchPart} ${variationPart} Responda APENAS com JSON válido sem markdown no formato: {"recipes":[{"id":"rec-001","title":"Nome","description":"Descrição curta","category":"prato principal","time":"30 min","time_minutes":30,"difficulty":"fácil","diet":[],"servings":4,"ingredients":["2 xícaras de arroz"],"instructions":"1. Passo um.\\n2. Passo dois.","nutrition":{"calories":320,"protein":8,"carbs":60,"fat":5}}]}`;
 
     const aiRes = await fetch(AI_URL, {
       method: "POST",
