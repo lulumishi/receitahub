@@ -108,12 +108,54 @@ function RecipeDetailModal({ recipe, onClose, onDelete, onFavorite, onRate, onSa
           </div>
         </div>
         <div className="p-6 space-y-6">
-          <div className="flex gap-4 text-sm text-cream/60">
+          <div className="flex gap-4 text-sm text-cream/60 flex-wrap">
             {recipe.time_minutes && <span>⏱ {recipe.time_minutes} min</span>}
             {recipe.difficulty && <span>📊 {recipe.difficulty}</span>}
             {recipe.category && <span>🍽 {recipe.category}</span>}
+            {recipe.calories_per_serving && <span className="text-blush">🔥 ≈ {recipe.calories_per_serving} kcal/porção</span>}
+            {(recipe.times_cooked ?? 0) > 0 && <span className="text-emerald-400">🍳 feita {recipe.times_cooked}×</span>}
           </div>
           {recipe.description && <p className="text-cream/70 text-sm leading-relaxed">{recipe.description}</p>}
+
+          {/* Avaliação + Comi isso */}
+          <div className="bg-charcoal-light border border-border rounded-2xl p-4 space-y-3">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <div className="text-xs uppercase tracking-widest text-cream/50 mb-1">Sua avaliação</div>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <button
+                      key={n}
+                      onClick={() => onRate(recipe.id, n)}
+                      className={`text-2xl transition ${(recipe.rating ?? 0) >= n ? "text-amber-400" : "text-cream/20 hover:text-amber-400/60"}`}
+                      title={`${n} estrela${n > 1 ? "s" : ""}`}
+                    >
+                      ★
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {recipe.calories_per_serving && (
+                <button
+                  onClick={() => onAteIt(recipe)}
+                  className="px-4 py-2 rounded-full bg-blush text-charcoal text-sm font-medium hover:bg-blush-deep transition"
+                >
+                  + Comi isso ({recipe.calories_per_serving} kcal)
+                </button>
+              )}
+            </div>
+            <div>
+              <div className="text-xs uppercase tracking-widest text-cream/50 mb-2">Suas anotações</div>
+              <textarea
+                value={notesDraft}
+                onChange={(e) => setNotesDraft(e.target.value)}
+                onBlur={() => { if (notesDraft !== (recipe.notes ?? "")) onSaveNotes(recipe.id, notesDraft); }}
+                rows={2}
+                placeholder="ex: ficou ótimo, da próxima usar menos sal..."
+                className="w-full bg-charcoal border border-border rounded-xl p-3 text-cream placeholder:text-cream/30 text-sm focus:outline-none focus:border-blush/50 resize-none"
+              />
+            </div>
+          </div>
 
           {/* Slider de porções */}
           <div className="bg-charcoal-light border border-border rounded-2xl p-4">
