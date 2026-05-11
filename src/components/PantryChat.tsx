@@ -173,6 +173,23 @@ function extractCategory(content: string): string {
   return match ? cleanMarkdownLine(match[1]).toLowerCase() : "prato principal";
 }
 
+function extractCalories(content: string): number | null {
+  // Procura padrões tipo "320 kcal", "≈ 450 kcal", "calorias: 380", "380 calorias"
+  const patterns = [
+    /(\d{2,4})\s*kcal/i,
+    /calorias?\s*[:\-–]?\s*(\d{2,4})/i,
+    /(\d{2,4})\s*calorias?/i,
+  ];
+  for (const re of patterns) {
+    const m = content.match(re);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      if (n >= 30 && n <= 3000) return n;
+    }
+  }
+  return null;
+}
+
 function extractDescription(content: string, title: string): string {
   const titleNormalized = normalizeText(title);
   const line = content
