@@ -53,7 +53,9 @@ Conteúdo:
 ${source}
 """
 
-Responda APENAS no formato JSON: {"recipe":{"title":"","description":"","category":"prato principal","time_minutes":30,"difficulty":"fácil","diet":[],"ingredients":["..."],"instructions":"1. ...\\n2. ..."}}`;
+Inclua também uma estimativa de calorias por porção (calories_per_serving) — número inteiro em kcal. Se não for possível estimar, devolva null.
+
+Responda APENAS no formato JSON: {"recipe":{"title":"","description":"","category":"prato principal","time_minutes":30,"difficulty":"fácil","diet":[],"calories_per_serving":350,"ingredients":["..."],"instructions":"1. ...\\n2. ..."}}`;
 
     const aiRes = await fetch(AI_URL, {
       method: "POST",

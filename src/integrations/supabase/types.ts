@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      calorie_log: {
+        Row: {
+          calories: number
+          consumed_at: string
+          created_at: string
+          id: string
+          recipe_id: string | null
+          recipe_title: string
+          user_id: string
+        }
+        Insert: {
+          calories: number
+          consumed_at?: string
+          created_at?: string
+          id?: string
+          recipe_id?: string | null
+          recipe_title: string
+          user_id: string
+        }
+        Update: {
+          calories?: number
+          consumed_at?: string
+          created_at?: string
+          id?: string
+          recipe_id?: string | null
+          recipe_title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calorie_log_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "user_recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pantry_items: {
         Row: {
           category: string
@@ -115,6 +153,7 @@ export type Database = {
       }
       user_recipes: {
         Row: {
+          calories_per_serving: number | null
           category: string | null
           created_at: string
           description: string | null
@@ -125,12 +164,16 @@ export type Database = {
           ingredients: string[] | null
           instructions: string | null
           is_favorite: boolean
+          notes: string | null
+          rating: number | null
           time_minutes: number | null
+          times_cooked: number
           title: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          calories_per_serving?: number | null
           category?: string | null
           created_at?: string
           description?: string | null
@@ -141,12 +184,16 @@ export type Database = {
           ingredients?: string[] | null
           instructions?: string | null
           is_favorite?: boolean
+          notes?: string | null
+          rating?: number | null
           time_minutes?: number | null
+          times_cooked?: number
           title: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          calories_per_serving?: number | null
           category?: string | null
           created_at?: string
           description?: string | null
@@ -157,7 +204,10 @@ export type Database = {
           ingredients?: string[] | null
           instructions?: string | null
           is_favorite?: boolean
+          notes?: string | null
+          rating?: number | null
           time_minutes?: number | null
+          times_cooked?: number
           title?: string
           updated_at?: string
           user_id?: string

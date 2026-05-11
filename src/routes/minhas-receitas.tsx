@@ -19,6 +19,13 @@ type UserRecipe = {
   time_minutes: number | null; difficulty: string | null; diet: string[] | null;
   description: string | null; is_favorite: boolean;
   ingredients: string[] | null; instructions: string | null;
+  calories_per_serving: number | null; rating: number | null;
+  notes: string | null; times_cooked: number;
+};
+
+type CalorieEntry = {
+  id: string; recipe_id: string | null; recipe_title: string;
+  calories: number; consumed_at: string;
 };
 
 const CATEGORY_STYLE: Record<string, { emoji: string; bg: string }> = {
@@ -54,11 +61,15 @@ function RecipeCover({ category, size = "card" }: { category: string | null; siz
 }
 
 // ─── Modal de detalhes da receita salva ──────────────────────────────────────
-function RecipeDetailModal({ recipe, onClose, onDelete, onFavorite }: {
+function RecipeDetailModal({ recipe, onClose, onDelete, onFavorite, onRate, onSaveNotes, onAteIt }: {
   recipe: UserRecipe; onClose: () => void;
   onDelete: (id: string) => void; onFavorite: (id: string, v: boolean) => void;
+  onRate: (id: string, rating: number) => void;
+  onSaveNotes: (id: string, notes: string) => void;
+  onAteIt: (r: UserRecipe) => void;
 }) {
   const [servings, setServings] = useState(4);
+  const [notesDraft, setNotesDraft] = useState(recipe.notes ?? "");
   const baseServings = 4;
   const ratio = servings / baseServings;
 
@@ -97,12 +108,54 @@ function RecipeDetailModal({ recipe, onClose, onDelete, onFavorite }: {
           </div>
         </div>
         <div className="p-6 space-y-6">
-          <div className="flex gap-4 text-sm text-cream/60">
+          <div className="flex gap-4 text-sm text-cream/60 flex-wrap">
             {recipe.time_minutes && <span>⏱ {recipe.time_minutes} min</span>}
             {recipe.difficulty && <span>📊 {recipe.difficulty}</span>}
             {recipe.category && <span>🍽 {recipe.category}</span>}
+            {recipe.calories_per_serving && <span className="text-blush">🔥 ≈ {recipe.calories_per_serving} kcal/porção</span>}
+            {(recipe.times_cooked ?? 0) > 0 && <span className="text-emerald-400">🍳 feita {recipe.times_cooked}×</span>}
           </div>
           {recipe.description && <p className="text-cream/70 text-sm leading-relaxed">{recipe.description}</p>}
+
+          {/* Avaliação + Comi isso */}
+          <div className="bg-charcoal-light border border-border rounded-2xl p-4 space-y-3">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <div className="text-xs uppercase tracking-widest text-cream/50 mb-1">Sua avaliação</div>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <button
+                      key={n}
+                      onClick={() => onRate(recipe.id, n)}
+                      className={`text-2xl transition ${(recipe.rating ?? 0) >= n ? "text-amber-400" : "text-cream/20 hover:text-amber-400/60"}`}
+                      title={`${n} estrela${n > 1 ? "s" : ""}`}
+                    >
+                      ★
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {recipe.calories_per_serving && (
+                <button
+                  onClick={() => onAteIt(recipe)}
+                  className="px-4 py-2 rounded-full bg-blush text-charcoal text-sm font-medium hover:bg-blush-deep transition"
+                >
+                  + Comi isso ({recipe.calories_per_serving} kcal)
+                </button>
+              )}
+            </div>
+            <div>
+              <div className="text-xs uppercase tracking-widest text-cream/50 mb-2">Suas anotações</div>
+              <textarea
+                value={notesDraft}
+                onChange={(e) => setNotesDraft(e.target.value)}
+                onBlur={() => { if (notesDraft !== (recipe.notes ?? "")) onSaveNotes(recipe.id, notesDraft); }}
+                rows={2}
+                placeholder="ex: ficou ótimo, da próxima usar menos sal..."
+                className="w-full bg-charcoal border border-border rounded-xl p-3 text-cream placeholder:text-cream/30 text-sm focus:outline-none focus:border-blush/50 resize-none"
+              />
+            </div>
+          </div>
 
           {/* Slider de porções */}
           <div className="bg-charcoal-light border border-border rounded-2xl p-4">
@@ -275,7 +328,8 @@ function MyRecipesPage() {
   const [loading, setLoading] = useState(true);
   const [selectedRecipe, setSelectedRecipe] = useState<UserRecipe | null>(null);
   const [showImport, setShowImport] = useState(false);
-  const [filter, setFilter] = useState<"todas" | "favoritas">("todas");
+  const [filter, setFilter] = useState<"todas" | "favoritas" | "melhor avaliadas" | "mais feitas">("todas");
+  const [calorieEntries, setCalorieEntries] = useState<CalorieEntry[]>([]);
 
   useEffect(() => {
     if (!authLoading && !session) navigate({ to: "/login" });
@@ -285,10 +339,18 @@ function MyRecipesPage() {
     if (!session) return;
     void (async () => {
       setLoading(true);
-      const { data, error } = await supabase.from("user_recipes")
-        .select("id, title, image_url, category, time_minutes, difficulty, diet, description, is_favorite, ingredients, instructions")
-        .order("created_at", { ascending: false });
-      if (!error && data) setRecipes(data);
+      const today = new Date().toISOString().slice(0, 10);
+      const [recipesRes, caloriesRes] = await Promise.all([
+        supabase.from("user_recipes")
+          .select("id, title, image_url, category, time_minutes, difficulty, diet, description, is_favorite, ingredients, instructions, calories_per_serving, rating, notes, times_cooked")
+          .order("created_at", { ascending: false }),
+        supabase.from("calorie_log")
+          .select("id, recipe_id, recipe_title, calories, consumed_at")
+          .eq("consumed_at", today)
+          .order("created_at", { ascending: false }),
+      ]);
+      if (!recipesRes.error && recipesRes.data) setRecipes(recipesRes.data as UserRecipe[]);
+      if (!caloriesRes.error && caloriesRes.data) setCalorieEntries(caloriesRes.data as CalorieEntry[]);
       setLoading(false);
     })();
   }, [session]);
@@ -304,6 +366,45 @@ function MyRecipesPage() {
     if (selectedRecipe?.id === id) setSelectedRecipe((prev) => prev ? { ...prev, is_favorite: value } : prev);
   }
 
+  async function handleRate(id: string, rating: number) {
+    await supabase.from("user_recipes").update({ rating }).eq("id", id);
+    setRecipes((prev) => prev.map((r) => r.id === id ? { ...r, rating } : r));
+    if (selectedRecipe?.id === id) setSelectedRecipe((prev) => prev ? { ...prev, rating } : prev);
+  }
+
+  async function handleNotes(id: string, notes: string) {
+    await supabase.from("user_recipes").update({ notes }).eq("id", id);
+    setRecipes((prev) => prev.map((r) => r.id === id ? { ...r, notes } : r));
+  }
+
+  async function handleAteIt(recipe: UserRecipe, ev?: React.MouseEvent) {
+    if (!session) return;
+    ev?.stopPropagation();
+    const calories = recipe.calories_per_serving;
+    if (!calories) {
+      alert("Essa receita ainda não tem calorias estimadas. Salve uma nova ou edite manualmente.");
+      return;
+    }
+    const { data, error } = await supabase.from("calorie_log").insert({
+      user_id: session.user.id,
+      recipe_id: recipe.id,
+      recipe_title: recipe.title,
+      calories,
+    }).select().single();
+    if (!error && data) {
+      setCalorieEntries((prev) => [data as CalorieEntry, ...prev]);
+      // incrementa times_cooked
+      const next = (recipe.times_cooked ?? 0) + 1;
+      await supabase.from("user_recipes").update({ times_cooked: next }).eq("id", recipe.id);
+      setRecipes((prev) => prev.map((r) => r.id === recipe.id ? { ...r, times_cooked: next } : r));
+    }
+  }
+
+  async function handleRemoveCalorie(id: string) {
+    await supabase.from("calorie_log").delete().eq("id", id);
+    setCalorieEntries((prev) => prev.filter((e) => e.id !== id));
+  }
+
   async function handleImport(partial: Partial<UserRecipe>) {
     if (!session) return;
     const { data, error } = await supabase.from("user_recipes").insert({
@@ -314,9 +415,12 @@ function MyRecipesPage() {
       instructions: partial.instructions ?? null,
       ingredients: partial.ingredients ?? null,
       diet: partial.diet ?? [],
+      calories_per_serving: partial.calories_per_serving ?? null,
+      time_minutes: partial.time_minutes ?? null,
+      difficulty: partial.difficulty ?? null,
       is_favorite: false,
     }).select().single();
-    if (!error && data) setRecipes((prev) => [data, ...prev]);
+    if (!error && data) setRecipes((prev) => [data as UserRecipe, ...prev]);
   }
 
   if (authLoading || !session) return (
@@ -326,7 +430,13 @@ function MyRecipesPage() {
   );
 
   const favorites = recipes.filter((r) => r.is_favorite);
-  const displayed = filter === "favoritas" ? favorites : recipes;
+  const totalCalories = calorieEntries.reduce((sum, e) => sum + e.calories, 0);
+  const cookedCount = recipes.reduce((sum, r) => sum + (r.times_cooked ?? 0), 0);
+
+  let displayed = recipes;
+  if (filter === "favoritas") displayed = favorites;
+  else if (filter === "melhor avaliadas") displayed = [...recipes].filter((r) => r.rating).sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+  else if (filter === "mais feitas") displayed = [...recipes].filter((r) => (r.times_cooked ?? 0) > 0).sort((a, b) => (b.times_cooked ?? 0) - (a.times_cooked ?? 0));
 
   return (
     <div className="min-h-screen bg-charcoal text-cream">
@@ -350,11 +460,33 @@ function MyRecipesPage() {
           </div>
         </div>
 
+        {/* Painel Calorias do dia */}
+        <div className="mt-10 bg-gradient-to-br from-blush/15 to-blush/5 border border-blush/30 rounded-3xl p-6">
+          <div className="flex items-start justify-between flex-wrap gap-4">
+            <div>
+              <div className="text-xs uppercase tracking-widest text-blush mb-2">🔥 Calorias hoje</div>
+              <div className="font-display text-5xl text-cream">{totalCalories.toLocaleString("pt-BR")} <span className="text-2xl text-cream/50">kcal</span></div>
+              <p className="text-xs text-cream/40 mt-2">Estimativas da IA — não substituem rótulo nutricional.</p>
+            </div>
+            {calorieEntries.length > 0 && (
+              <div className="flex-1 min-w-[240px] max-w-md space-y-1.5">
+                {calorieEntries.map((e) => (
+                  <div key={e.id} className="flex items-center gap-2 text-sm bg-charcoal/40 rounded-full px-3 py-1.5">
+                    <span className="text-cream/80 truncate flex-1">{e.recipe_title}</span>
+                    <span className="text-blush text-xs">{e.calories} kcal</span>
+                    <button onClick={() => handleRemoveCalorie(e.id)} className="text-cream/40 hover:text-red-400 transition">×</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Stats */}
-        <div className="mt-10 grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4">
           {[
             { l: "Salvas", v: recipes.length },
-            { l: "Já preparadas", v: 0 },
+            { l: "Já preparadas", v: cookedCount },
             { l: "Favoritas", v: favorites.length },
           ].map((s) => (
             <div key={s.l} className="bg-charcoal-light rounded-2xl p-5 border border-border">
@@ -364,9 +496,9 @@ function MyRecipesPage() {
           ))}
         </div>
 
-        {/* Filtro favoritas */}
-        <div className="mt-8 flex gap-2">
-          {(["todas", "favoritas"] as const).map((f) => (
+        {/* Filtros */}
+        <div className="mt-8 flex gap-2 flex-wrap">
+          {(["todas", "favoritas", "melhor avaliadas", "mais feitas"] as const).map((f) => (
             <button key={f} onClick={() => setFilter(f)}
               className={`px-4 py-2 rounded-full text-sm capitalize transition border ${filter === f ? "bg-blush text-charcoal border-blush" : "border-border text-cream/60 hover:text-cream"}`}>{f}</button>
           ))}
@@ -383,13 +515,33 @@ function MyRecipesPage() {
                 className="group cursor-pointer bg-charcoal-light rounded-2xl overflow-hidden border border-border hover:border-blush/40 transition-all">
                 <RecipeCover category={r.category} size="card" />
                 <div className="p-5">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex-1">
                       {r.category && <div className="text-xs uppercase tracking-widest text-blush/90 mb-2">{r.category}{r.time_minutes ? ` · ${r.time_minutes} min` : ""}</div>}
                       <h3 className="font-display text-2xl text-cream leading-tight mb-2 group-hover:text-blush transition">{r.title}</h3>
                       {r.description && <p className="text-sm text-cream/60 line-clamp-2">{r.description}</p>}
                     </div>
                     {r.is_favorite && <span className="text-blush text-lg flex-shrink-0">★</span>}
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap mt-3 pt-3 border-t border-border/50">
+                    {r.calories_per_serving && (
+                      <span className="text-[11px] bg-blush/15 text-blush px-2 py-1 rounded-full">≈ {r.calories_per_serving} kcal</span>
+                    )}
+                    {r.rating && (
+                      <span className="text-[11px] bg-amber-500/15 text-amber-400 px-2 py-1 rounded-full">{"★".repeat(r.rating)}</span>
+                    )}
+                    {(r.times_cooked ?? 0) > 0 && (
+                      <span className="text-[11px] bg-emerald-500/15 text-emerald-400 px-2 py-1 rounded-full">🍳 {r.times_cooked}×</span>
+                    )}
+                    {r.calories_per_serving && (
+                      <button
+                        onClick={(ev) => handleAteIt(r, ev)}
+                        className="ml-auto text-[11px] px-3 py-1 rounded-full border border-blush/40 text-blush hover:bg-blush hover:text-charcoal transition"
+                        title="Registrar consumo de hoje"
+                      >
+                        + Comi isso
+                      </button>
+                    )}
                   </div>
                 </div>
               </article>
@@ -409,8 +561,15 @@ function MyRecipesPage() {
       </section>
 
       {selectedRecipe && (
-        <RecipeDetailModal recipe={selectedRecipe} onClose={() => setSelectedRecipe(null)}
-          onDelete={handleDelete} onFavorite={handleFavorite} />
+        <RecipeDetailModal
+          recipe={selectedRecipe}
+          onClose={() => setSelectedRecipe(null)}
+          onDelete={handleDelete}
+          onFavorite={handleFavorite}
+          onRate={handleRate}
+          onSaveNotes={handleNotes}
+          onAteIt={(r) => handleAteIt(r)}
+        />
       )}
       {showImport && <ImportModal onClose={() => setShowImport(false)} onImport={handleImport} />}
     </div>
