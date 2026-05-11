@@ -257,6 +257,7 @@ export function PantryChat() {
       ingredients: ingredients.length > 0 ? ingredients : null,
       instructions,
       diet: extractDiet(content),
+      calories_per_serving: extractCalories(content),
       is_favorite: false,
     });
 
