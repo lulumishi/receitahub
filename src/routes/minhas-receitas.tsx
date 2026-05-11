@@ -293,9 +293,9 @@ function MyRecipesPage() {
     void (async () => {
       setLoading(true);
       const { data, error } = await supabase.from("user_recipes")
-        .select("id, title, image_url, category, time_minutes, difficulty, diet, description, is_favorite, ingredients, instructions")
+        .select("id, title, image_url, category, time_minutes, difficulty, diet, description, is_favorite, ingredients, instructions, calories_per_serving, rating, notes, times_cooked")
         .order("created_at", { ascending: false });
-      if (!error && data) setRecipes(data);
+      if (!error && data) setRecipes(data as UserRecipe[]);
       setLoading(false);
     })();
   }, [session]);
