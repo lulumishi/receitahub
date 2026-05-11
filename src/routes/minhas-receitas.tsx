@@ -282,7 +282,8 @@ function MyRecipesPage() {
   const [loading, setLoading] = useState(true);
   const [selectedRecipe, setSelectedRecipe] = useState<UserRecipe | null>(null);
   const [showImport, setShowImport] = useState(false);
-  const [filter, setFilter] = useState<"todas" | "favoritas">("todas");
+  const [filter, setFilter] = useState<"todas" | "favoritas" | "melhor avaliadas" | "mais feitas">("todas");
+  const [calorieEntries, setCalorieEntries] = useState<CalorieEntry[]>([]);
 
   useEffect(() => {
     if (!authLoading && !session) navigate({ to: "/login" });
@@ -292,10 +293,18 @@ function MyRecipesPage() {
     if (!session) return;
     void (async () => {
       setLoading(true);
-      const { data, error } = await supabase.from("user_recipes")
-        .select("id, title, image_url, category, time_minutes, difficulty, diet, description, is_favorite, ingredients, instructions, calories_per_serving, rating, notes, times_cooked")
-        .order("created_at", { ascending: false });
-      if (!error && data) setRecipes(data as UserRecipe[]);
+      const today = new Date().toISOString().slice(0, 10);
+      const [recipesRes, caloriesRes] = await Promise.all([
+        supabase.from("user_recipes")
+          .select("id, title, image_url, category, time_minutes, difficulty, diet, description, is_favorite, ingredients, instructions, calories_per_serving, rating, notes, times_cooked")
+          .order("created_at", { ascending: false }),
+        supabase.from("calorie_log")
+          .select("id, recipe_id, recipe_title, calories, consumed_at")
+          .eq("consumed_at", today)
+          .order("created_at", { ascending: false }),
+      ]);
+      if (!recipesRes.error && recipesRes.data) setRecipes(recipesRes.data as UserRecipe[]);
+      if (!caloriesRes.error && caloriesRes.data) setCalorieEntries(caloriesRes.data as CalorieEntry[]);
       setLoading(false);
     })();
   }, [session]);
@@ -311,6 +320,45 @@ function MyRecipesPage() {
     if (selectedRecipe?.id === id) setSelectedRecipe((prev) => prev ? { ...prev, is_favorite: value } : prev);
   }
 
+  async function handleRate(id: string, rating: number) {
+    await supabase.from("user_recipes").update({ rating }).eq("id", id);
+    setRecipes((prev) => prev.map((r) => r.id === id ? { ...r, rating } : r));
+    if (selectedRecipe?.id === id) setSelectedRecipe((prev) => prev ? { ...prev, rating } : prev);
+  }
+
+  async function handleNotes(id: string, notes: string) {
+    await supabase.from("user_recipes").update({ notes }).eq("id", id);
+    setRecipes((prev) => prev.map((r) => r.id === id ? { ...r, notes } : r));
+  }
+
+  async function handleAteIt(recipe: UserRecipe, ev?: React.MouseEvent) {
+    if (!session) return;
+    ev?.stopPropagation();
+    const calories = recipe.calories_per_serving;
+    if (!calories) {
+      alert("Essa receita ainda não tem calorias estimadas. Salve uma nova ou edite manualmente.");
+      return;
+    }
+    const { data, error } = await supabase.from("calorie_log").insert({
+      user_id: session.user.id,
+      recipe_id: recipe.id,
+      recipe_title: recipe.title,
+      calories,
+    }).select().single();
+    if (!error && data) {
+      setCalorieEntries((prev) => [data as CalorieEntry, ...prev]);
+      // incrementa times_cooked
+      const next = (recipe.times_cooked ?? 0) + 1;
+      await supabase.from("user_recipes").update({ times_cooked: next }).eq("id", recipe.id);
+      setRecipes((prev) => prev.map((r) => r.id === recipe.id ? { ...r, times_cooked: next } : r));
+    }
+  }
+
+  async function handleRemoveCalorie(id: string) {
+    await supabase.from("calorie_log").delete().eq("id", id);
+    setCalorieEntries((prev) => prev.filter((e) => e.id !== id));
+  }
+
   async function handleImport(partial: Partial<UserRecipe>) {
     if (!session) return;
     const { data, error } = await supabase.from("user_recipes").insert({
@@ -321,9 +369,12 @@ function MyRecipesPage() {
       instructions: partial.instructions ?? null,
       ingredients: partial.ingredients ?? null,
       diet: partial.diet ?? [],
+      calories_per_serving: partial.calories_per_serving ?? null,
+      time_minutes: partial.time_minutes ?? null,
+      difficulty: partial.difficulty ?? null,
       is_favorite: false,
     }).select().single();
-    if (!error && data) setRecipes((prev) => [data, ...prev]);
+    if (!error && data) setRecipes((prev) => [data as UserRecipe, ...prev]);
   }
 
   if (authLoading || !session) return (
@@ -333,7 +384,13 @@ function MyRecipesPage() {
   );
 
   const favorites = recipes.filter((r) => r.is_favorite);
-  const displayed = filter === "favoritas" ? favorites : recipes;
+  const totalCalories = calorieEntries.reduce((sum, e) => sum + e.calories, 0);
+  const cookedCount = recipes.reduce((sum, r) => sum + (r.times_cooked ?? 0), 0);
+
+  let displayed = recipes;
+  if (filter === "favoritas") displayed = favorites;
+  else if (filter === "melhor avaliadas") displayed = [...recipes].filter((r) => r.rating).sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+  else if (filter === "mais feitas") displayed = [...recipes].filter((r) => (r.times_cooked ?? 0) > 0).sort((a, b) => (b.times_cooked ?? 0) - (a.times_cooked ?? 0));
 
   return (
     <div className="min-h-screen bg-charcoal text-cream">
