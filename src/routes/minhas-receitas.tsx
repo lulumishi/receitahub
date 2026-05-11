@@ -61,11 +61,15 @@ function RecipeCover({ category, size = "card" }: { category: string | null; siz
 }
 
 // ─── Modal de detalhes da receita salva ──────────────────────────────────────
-function RecipeDetailModal({ recipe, onClose, onDelete, onFavorite }: {
+function RecipeDetailModal({ recipe, onClose, onDelete, onFavorite, onRate, onSaveNotes, onAteIt }: {
   recipe: UserRecipe; onClose: () => void;
   onDelete: (id: string) => void; onFavorite: (id: string, v: boolean) => void;
+  onRate: (id: string, rating: number) => void;
+  onSaveNotes: (id: string, notes: string) => void;
+  onAteIt: (r: UserRecipe) => void;
 }) {
   const [servings, setServings] = useState(4);
+  const [notesDraft, setNotesDraft] = useState(recipe.notes ?? "");
   const baseServings = 4;
   const ratio = servings / baseServings;
 
