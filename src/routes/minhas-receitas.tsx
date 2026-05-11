@@ -414,11 +414,33 @@ function MyRecipesPage() {
           </div>
         </div>
 
+        {/* Painel Calorias do dia */}
+        <div className="mt-10 bg-gradient-to-br from-blush/15 to-blush/5 border border-blush/30 rounded-3xl p-6">
+          <div className="flex items-start justify-between flex-wrap gap-4">
+            <div>
+              <div className="text-xs uppercase tracking-widest text-blush mb-2">🔥 Calorias hoje</div>
+              <div className="font-display text-5xl text-cream">{totalCalories.toLocaleString("pt-BR")} <span className="text-2xl text-cream/50">kcal</span></div>
+              <p className="text-xs text-cream/40 mt-2">Estimativas da IA — não substituem rótulo nutricional.</p>
+            </div>
+            {calorieEntries.length > 0 && (
+              <div className="flex-1 min-w-[240px] max-w-md space-y-1.5">
+                {calorieEntries.map((e) => (
+                  <div key={e.id} className="flex items-center gap-2 text-sm bg-charcoal/40 rounded-full px-3 py-1.5">
+                    <span className="text-cream/80 truncate flex-1">{e.recipe_title}</span>
+                    <span className="text-blush text-xs">{e.calories} kcal</span>
+                    <button onClick={() => handleRemoveCalorie(e.id)} className="text-cream/40 hover:text-red-400 transition">×</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Stats */}
-        <div className="mt-10 grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4">
           {[
             { l: "Salvas", v: recipes.length },
-            { l: "Já preparadas", v: 0 },
+            { l: "Já preparadas", v: cookedCount },
             { l: "Favoritas", v: favorites.length },
           ].map((s) => (
             <div key={s.l} className="bg-charcoal-light rounded-2xl p-5 border border-border">
@@ -428,9 +450,9 @@ function MyRecipesPage() {
           ))}
         </div>
 
-        {/* Filtro favoritas */}
-        <div className="mt-8 flex gap-2">
-          {(["todas", "favoritas"] as const).map((f) => (
+        {/* Filtros */}
+        <div className="mt-8 flex gap-2 flex-wrap">
+          {(["todas", "favoritas", "melhor avaliadas", "mais feitas"] as const).map((f) => (
             <button key={f} onClick={() => setFilter(f)}
               className={`px-4 py-2 rounded-full text-sm capitalize transition border ${filter === f ? "bg-blush text-charcoal border-blush" : "border-border text-cream/60 hover:text-cream"}`}>{f}</button>
           ))}
@@ -447,13 +469,33 @@ function MyRecipesPage() {
                 className="group cursor-pointer bg-charcoal-light rounded-2xl overflow-hidden border border-border hover:border-blush/40 transition-all">
                 <RecipeCover category={r.category} size="card" />
                 <div className="p-5">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex-1">
                       {r.category && <div className="text-xs uppercase tracking-widest text-blush/90 mb-2">{r.category}{r.time_minutes ? ` · ${r.time_minutes} min` : ""}</div>}
                       <h3 className="font-display text-2xl text-cream leading-tight mb-2 group-hover:text-blush transition">{r.title}</h3>
                       {r.description && <p className="text-sm text-cream/60 line-clamp-2">{r.description}</p>}
                     </div>
                     {r.is_favorite && <span className="text-blush text-lg flex-shrink-0">★</span>}
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap mt-3 pt-3 border-t border-border/50">
+                    {r.calories_per_serving && (
+                      <span className="text-[11px] bg-blush/15 text-blush px-2 py-1 rounded-full">≈ {r.calories_per_serving} kcal</span>
+                    )}
+                    {r.rating && (
+                      <span className="text-[11px] bg-amber-500/15 text-amber-400 px-2 py-1 rounded-full">{"★".repeat(r.rating)}</span>
+                    )}
+                    {(r.times_cooked ?? 0) > 0 && (
+                      <span className="text-[11px] bg-emerald-500/15 text-emerald-400 px-2 py-1 rounded-full">🍳 {r.times_cooked}×</span>
+                    )}
+                    {r.calories_per_serving && (
+                      <button
+                        onClick={(ev) => handleAteIt(r, ev)}
+                        className="ml-auto text-[11px] px-3 py-1 rounded-full border border-blush/40 text-blush hover:bg-blush hover:text-charcoal transition"
+                        title="Registrar consumo de hoje"
+                      >
+                        + Comi isso
+                      </button>
+                    )}
                   </div>
                 </div>
               </article>
