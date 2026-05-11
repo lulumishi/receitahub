@@ -250,7 +250,8 @@ function RecipesPage() {
       const { error } = await supabase.from("user_recipes").insert({
         user_id: session.user.id, title: recipe.title, description: recipe.description,
         category: recipe.category, time_minutes: recipe.time_minutes, difficulty: recipe.difficulty,
-        diet: recipe.diet, ingredients: recipe.ingredients, instructions: recipe.instructions, is_favorite: false,
+        diet: recipe.diet, ingredients: recipe.ingredients, instructions: recipe.instructions,
+        calories_per_serving: recipe.nutrition?.calories ?? null, is_favorite: false,
       });
       if (!error) setSavedIds((prev) => new Set(prev).add(recipe.id));
     } catch (e) { console.error(e); }
