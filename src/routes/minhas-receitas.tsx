@@ -167,9 +167,23 @@ function ImportModal({ onClose, onImport }: { onClose: () => void; onImport: (re
       onImport(data.recipe);
       onClose();
     } catch (e) {
-      // fallback: salva como receita simples com o texto bruto
       onImport({ title: "Receita importada", instructions: text, category: "prato principal" });
       onClose();
+    } finally { setLoading(false); }
+  }
+
+  async function handleUrlImport() {
+    if (!url.trim()) return;
+    setLoading(true); setError("");
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("parse-recipe", {
+        body: { url },
+      });
+      if (fnError || data?.error) throw new Error(fnError?.message ?? data?.error ?? "Erro ao processar");
+      onImport(data.recipe);
+      onClose();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Não foi possível importar dessa URL.");
     } finally { setLoading(false); }
   }
 
@@ -179,7 +193,11 @@ function ImportModal({ onClose, onImport }: { onClose: () => void; onImport: (re
     setLoading(true); setError("");
     try {
       const content = await file.text();
-      onImport({ title: file.name.replace(/\.(txt|pdf)$/i, ""), instructions: content, category: "prato principal" });
+      const { data, error: fnError } = await supabase.functions.invoke("parse-recipe", {
+        body: { text: content },
+      });
+      if (fnError || data?.error) throw new Error(fnError?.message ?? data?.error ?? "Erro ao processar");
+      onImport(data.recipe);
       onClose();
     } catch {
       setError("Não foi possível ler o arquivo.");
@@ -230,13 +248,14 @@ function ImportModal({ onClose, onImport }: { onClose: () => void; onImport: (re
 
           {tab === "url" && (
             <div className="space-y-4">
-              <p className="text-sm text-cream/60">Cole a URL de um site de receitas como TudoGostoso, Panelinha ou Tastemade.</p>
+              <p className="text-sm text-cream/60">Cole a URL de um site de receitas (TudoGostoso, Panelinha, blogs, etc).</p>
               <input value={url} onChange={(e) => setUrl(e.target.value)} type="url"
                 placeholder="https://www.tudogostoso.com.br/receita/..."
                 className="w-full bg-charcoal-light border border-border rounded-full px-5 py-3 text-cream placeholder:text-cream/40 text-sm focus:outline-none focus:border-blush/50" />
-              <p className="text-xs text-cream/40">⚠️ A importação de URLs depende da estrutura do site e pode não funcionar em todos os casos.</p>
-              <button disabled className="w-full py-3 rounded-full bg-blush/30 text-charcoal/50 text-sm font-medium cursor-not-allowed">
-                Em breve
+              <p className="text-xs text-cream/40">A IA vai extrair título, ingredientes e modo de preparo automaticamente.</p>
+              <button onClick={handleUrlImport} disabled={loading || !url.trim()}
+                className="w-full py-3 rounded-full bg-blush text-charcoal text-sm font-medium hover:bg-blush-deep transition disabled:opacity-50">
+                {loading ? "Importando…" : "Importar da URL"}
               </button>
             </div>
           )}
