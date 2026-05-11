@@ -19,6 +19,13 @@ type UserRecipe = {
   time_minutes: number | null; difficulty: string | null; diet: string[] | null;
   description: string | null; is_favorite: boolean;
   ingredients: string[] | null; instructions: string | null;
+  calories_per_serving: number | null; rating: number | null;
+  notes: string | null; times_cooked: number;
+};
+
+type CalorieEntry = {
+  id: string; recipe_id: string | null; recipe_title: string;
+  calories: number; consumed_at: string;
 };
 
 const CATEGORY_STYLE: Record<string, { emoji: string; bg: string }> = {
