@@ -515,8 +515,15 @@ function MyRecipesPage() {
       </section>
 
       {selectedRecipe && (
-        <RecipeDetailModal recipe={selectedRecipe} onClose={() => setSelectedRecipe(null)}
-          onDelete={handleDelete} onFavorite={handleFavorite} />
+        <RecipeDetailModal
+          recipe={selectedRecipe}
+          onClose={() => setSelectedRecipe(null)}
+          onDelete={handleDelete}
+          onFavorite={handleFavorite}
+          onRate={handleRate}
+          onSaveNotes={handleNotes}
+          onAteIt={(r) => handleAteIt(r)}
+        />
       )}
       {showImport && <ImportModal onClose={() => setShowImport(false)} onImport={handleImport} />}
     </div>
