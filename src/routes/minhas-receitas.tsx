@@ -167,9 +167,23 @@ function ImportModal({ onClose, onImport }: { onClose: () => void; onImport: (re
       onImport(data.recipe);
       onClose();
     } catch (e) {
-      // fallback: salva como receita simples com o texto bruto
       onImport({ title: "Receita importada", instructions: text, category: "prato principal" });
       onClose();
+    } finally { setLoading(false); }
+  }
+
+  async function handleUrlImport() {
+    if (!url.trim()) return;
+    setLoading(true); setError("");
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke("parse-recipe", {
+        body: { url },
+      });
+      if (fnError || data?.error) throw new Error(fnError?.message ?? data?.error ?? "Erro ao processar");
+      onImport(data.recipe);
+      onClose();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Não foi possível importar dessa URL.");
     } finally { setLoading(false); }
   }
 
@@ -179,7 +193,11 @@ function ImportModal({ onClose, onImport }: { onClose: () => void; onImport: (re
     setLoading(true); setError("");
     try {
       const content = await file.text();
-      onImport({ title: file.name.replace(/\.(txt|pdf)$/i, ""), instructions: content, category: "prato principal" });
+      const { data, error: fnError } = await supabase.functions.invoke("parse-recipe", {
+        body: { text: content },
+      });
+      if (fnError || data?.error) throw new Error(fnError?.message ?? data?.error ?? "Erro ao processar");
+      onImport(data.recipe);
       onClose();
     } catch {
       setError("Não foi possível ler o arquivo.");
