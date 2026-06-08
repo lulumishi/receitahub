@@ -1,0 +1,1 @@
+ALTER TABLE public.user_recipes ADD COLUMN IF NOT EXISTS cost_home_brl numeric(10,2); ALTER TABLE public.user_recipes ADD COLUMN IF NOT EXISTS cost_delivery_brl numeric(10,2);
