@@ -588,6 +588,11 @@ function MyRecipesPage() {
                     {r.calories_per_serving && (
                       <span className="text-[11px] bg-blush/15 text-blush px-2 py-1 rounded-full">≈ {r.calories_per_serving} kcal</span>
                     )}
+                    {r.cost_home_brl && (
+                      <span className="text-[11px] bg-emerald-500/15 text-emerald-300 px-2 py-1 rounded-full">
+                        R$ {Number(r.cost_home_brl).toFixed(2)}
+                      </span>
+                    )}
                     {r.rating && (
                       <span className="text-[11px] bg-amber-500/15 text-amber-400 px-2 py-1 rounded-full">{"★".repeat(r.rating)}</span>
                     )}
