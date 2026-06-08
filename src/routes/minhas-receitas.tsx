@@ -135,6 +135,11 @@ function RecipeDetailModal({ recipe, onClose, onDelete, onFavorite, onRate, onSa
             {recipe.difficulty && <span>📊 {recipe.difficulty}</span>}
             {recipe.category && <span>🍽 {recipe.category}</span>}
             {recipe.calories_per_serving && <span className="text-blush">🔥 ≈ {recipe.calories_per_serving} kcal/porção</span>}
+            {recipe.cost_home_brl && recipe.cost_delivery_brl && (
+              <span className="text-emerald-400">
+                💰 R$ {Number(recipe.cost_home_brl).toFixed(2)} em casa vs R$ {Number(recipe.cost_delivery_brl).toFixed(2)} delivery
+              </span>
+            )}
             {(recipe.times_cooked ?? 0) > 0 && <span className="text-emerald-400">🍳 feita {recipe.times_cooked}×</span>}
           </div>
           {recipe.description && <p className="text-cream/70 text-sm leading-relaxed">{recipe.description}</p>}
