@@ -21,6 +21,7 @@ type UserRecipe = {
   ingredients: string[] | null; instructions: string | null;
   calories_per_serving: number | null; rating: number | null;
   notes: string | null; times_cooked: number;
+  cost_home_brl: number | null; cost_delivery_brl: number | null;
 };
 
 type CalorieEntry = {
@@ -28,19 +29,25 @@ type CalorieEntry = {
   calories: number; consumed_at: string;
 };
 
-const CATEGORY_STYLE: Record<string, { emoji: string; bg: string }> = {
-  "prato principal": { emoji: "🍗", bg: "from-amber-900/40 to-amber-800/20" },
-  "massa":           { emoji: "🍝", bg: "from-orange-900/40 to-orange-800/20" },
-  "salada":          { emoji: "🥗", bg: "from-green-900/40 to-green-800/20" },
-  "sobremesa":       { emoji: "🍰", bg: "from-pink-900/40 to-pink-800/20" },
-  "pães":            { emoji: "🍞", bg: "from-yellow-900/40 to-yellow-800/20" },
-  "sopa":            { emoji: "🍲", bg: "from-red-900/40 to-red-800/20" },
-  "café da manhã":   { emoji: "🥞", bg: "from-yellow-900/40 to-amber-800/20" },
-  "lanche":          { emoji: "🥪", bg: "from-lime-900/40 to-lime-800/20" },
-  "bebida":          { emoji: "🥤", bg: "from-cyan-900/40 to-cyan-800/20" },
-  "conserva":        { emoji: "🫙", bg: "from-zinc-800/60 to-zinc-700/30" },
-  "acompanhamento":  { emoji: "🥦", bg: "from-emerald-900/40 to-emerald-800/20" },
-  "default":         { emoji: "🍽️", bg: "from-zinc-800/60 to-zinc-700/30" },
+const CATEGORY_STYLE: Record<string, { emojis: string; bg: string }> = {
+  "prato principal": { emojis: "🍗🥔🌿",  bg: "from-amber-900/40 to-amber-800/20" },
+  "massa":           { emojis: "🍝🍅🧀",  bg: "from-orange-900/40 to-orange-800/20" },
+  "salada":          { emojis: "🥗🥑🍅",  bg: "from-green-900/40 to-green-800/20" },
+  "sobremesa":       { emojis: "🍰🍓✨",  bg: "from-pink-900/40 to-pink-800/20" },
+  "pães":            { emojis: "🍞🌾🧈",  bg: "from-yellow-900/40 to-yellow-800/20" },
+  "pao":             { emojis: "🍞🌾🧈",  bg: "from-yellow-900/40 to-yellow-800/20" },
+  "sopa":            { emojis: "🍲🥕🌶️", bg: "from-red-900/40 to-red-800/20" },
+  "café da manhã":   { emojis: "🥞🍳☕",  bg: "from-yellow-900/40 to-amber-800/20" },
+  "lanche":          { emojis: "🥪🍟🥤",  bg: "from-lime-900/40 to-lime-800/20" },
+  "bebida":          { emojis: "🥤🍋🧊",  bg: "from-cyan-900/40 to-cyan-800/20" },
+  "conserva":        { emojis: "🫙🥒🌶️", bg: "from-zinc-800/60 to-zinc-700/30" },
+  "acompanhamento":  { emojis: "🥦🥕🌽",  bg: "from-emerald-900/40 to-emerald-800/20" },
+  "entrada":         { emojis: "🥟🧀🌿",  bg: "from-stone-800/60 to-stone-700/30" },
+  "peixe":           { emojis: "🐟🍋🌿",  bg: "from-sky-900/40 to-sky-800/20" },
+  "frango":          { emojis: "🍗🌶️🧄", bg: "from-amber-900/40 to-orange-800/20" },
+  "carne":           { emojis: "🥩🔥🧂",  bg: "from-red-900/50 to-amber-900/30" },
+  "vegano":          { emojis: "🌱🥑🥦",  bg: "from-green-900/40 to-emerald-800/20" },
+  "default":         { emojis: "🍽️✨🌿", bg: "from-zinc-800/60 to-zinc-700/30" },
 };
 
 function getCategoryStyle(category: string | null) {
@@ -50,12 +57,27 @@ function getCategoryStyle(category: string | null) {
 }
 
 function RecipeCover({ category, size = "card" }: { category: string | null; size?: "card" | "modal" }) {
-  const { emoji, bg } = getCategoryStyle(category);
+  const { emojis, bg } = getCategoryStyle(category);
   const h = size === "modal" ? "h-56" : "aspect-[4/3]";
+  const main = emojis.slice(0, 2); // primeiros 2 chars são geralmente o primeiro emoji+VS16
+  // Renderiza como cluster: 1 grande + 2 menores ao redor
+  const chars = Array.from(emojis);
   return (
     <div className={`${h} w-full bg-gradient-to-br ${bg} flex items-center justify-center relative overflow-hidden`}>
       <div className="absolute inset-0 bg-charcoal/20" />
-      <span className={`relative ${size === "modal" ? "text-8xl" : "text-6xl"} select-none drop-shadow-lg`}>{emoji}</span>
+      {size === "modal" ? (
+        <div className="relative flex items-center justify-center gap-3 select-none drop-shadow-lg">
+          {chars.map((c, i) => (
+            <span key={i} className={i === 0 ? "text-8xl" : "text-5xl opacity-80"}>{c}</span>
+          ))}
+        </div>
+      ) : (
+        <div className="relative select-none drop-shadow-lg">
+          <span className="text-6xl">{chars[0]}</span>
+          {chars[1] && <span className="absolute -top-2 -right-6 text-3xl opacity-80 rotate-12">{chars[1]}</span>}
+          {chars[2] && <span className="absolute -bottom-2 -left-6 text-3xl opacity-80 -rotate-12">{chars[2]}</span>}
+        </div>
+      )}
     </div>
   );
 }
@@ -113,6 +135,11 @@ function RecipeDetailModal({ recipe, onClose, onDelete, onFavorite, onRate, onSa
             {recipe.difficulty && <span>📊 {recipe.difficulty}</span>}
             {recipe.category && <span>🍽 {recipe.category}</span>}
             {recipe.calories_per_serving && <span className="text-blush">🔥 ≈ {recipe.calories_per_serving} kcal/porção</span>}
+            {recipe.cost_home_brl && recipe.cost_delivery_brl && (
+              <span className="text-emerald-400">
+                💰 R$ {Number(recipe.cost_home_brl).toFixed(2)} em casa vs R$ {Number(recipe.cost_delivery_brl).toFixed(2)} delivery
+              </span>
+            )}
             {(recipe.times_cooked ?? 0) > 0 && <span className="text-emerald-400">🍳 feita {recipe.times_cooked}×</span>}
           </div>
           {recipe.description && <p className="text-cream/70 text-sm leading-relaxed">{recipe.description}</p>}
@@ -342,7 +369,7 @@ function MyRecipesPage() {
       const today = new Date().toISOString().slice(0, 10);
       const [recipesRes, caloriesRes] = await Promise.all([
         supabase.from("user_recipes")
-          .select("id, title, image_url, category, time_minutes, difficulty, diet, description, is_favorite, ingredients, instructions, calories_per_serving, rating, notes, times_cooked")
+          .select("id, title, image_url, category, time_minutes, difficulty, diet, description, is_favorite, ingredients, instructions, calories_per_serving, rating, notes, times_cooked, cost_home_brl, cost_delivery_brl")
           .order("created_at", { ascending: false }),
         supabase.from("calorie_log")
           .select("id, recipe_id, recipe_title, calories, consumed_at")
@@ -416,6 +443,8 @@ function MyRecipesPage() {
       ingredients: partial.ingredients ?? null,
       diet: partial.diet ?? [],
       calories_per_serving: partial.calories_per_serving ?? null,
+      cost_home_brl: partial.cost_home_brl ?? null,
+      cost_delivery_brl: partial.cost_delivery_brl ?? null,
       time_minutes: partial.time_minutes ?? null,
       difficulty: partial.difficulty ?? null,
       is_favorite: false,
@@ -432,6 +461,17 @@ function MyRecipesPage() {
   const favorites = recipes.filter((r) => r.is_favorite);
   const totalCalories = calorieEntries.reduce((sum, e) => sum + e.calories, 0);
   const cookedCount = recipes.reduce((sum, r) => sum + (r.times_cooked ?? 0), 0);
+  const totalSavings = recipes.reduce((sum, r) => {
+    const home = Number(r.cost_home_brl ?? 0);
+    const delivery = Number(r.cost_delivery_brl ?? 0);
+    const times = r.times_cooked ?? 0;
+    const diff = delivery - home;
+    return sum + (diff > 0 ? diff * times : 0);
+  }, 0);
+  const recipesWithCost = recipes.filter((r) => r.cost_home_brl && r.cost_delivery_brl);
+  const avgSavePerMeal = recipesWithCost.length
+    ? recipesWithCost.reduce((s, r) => s + (Number(r.cost_delivery_brl) - Number(r.cost_home_brl)), 0) / recipesWithCost.length
+    : 0;
 
   let displayed = recipes;
   if (filter === "favoritas") displayed = favorites;
@@ -482,6 +522,32 @@ function MyRecipesPage() {
           </div>
         </div>
 
+        {/* Painel Economia */}
+        <div className="mt-6 bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 border border-emerald-500/30 rounded-3xl p-6">
+          <div className="flex items-start justify-between flex-wrap gap-4">
+            <div>
+              <div className="text-xs uppercase tracking-widest text-emerald-400 mb-2">💰 Economia cozinhando em casa</div>
+              <div className="font-display text-5xl text-cream">
+                R$ {totalSavings.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+              <p className="text-xs text-cream/40 mt-2">
+                Total economizado vs pedir delivery, com base nas {cookedCount} refeições que você marcou como feitas.
+              </p>
+            </div>
+            {avgSavePerMeal > 0 && (
+              <div className="min-w-[200px] bg-charcoal/40 rounded-2xl p-4 space-y-2">
+                <div className="text-[11px] uppercase tracking-wider text-cream/50">Média por refeição</div>
+                <div className="font-display text-3xl text-emerald-300">
+                  R$ {avgSavePerMeal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+                <div className="text-[11px] text-cream/40">
+                  Estimativas da IA — preços médios BR 2025.
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Stats */}
         <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4">
           {[
@@ -526,6 +592,11 @@ function MyRecipesPage() {
                   <div className="flex items-center gap-2 flex-wrap mt-3 pt-3 border-t border-border/50">
                     {r.calories_per_serving && (
                       <span className="text-[11px] bg-blush/15 text-blush px-2 py-1 rounded-full">≈ {r.calories_per_serving} kcal</span>
+                    )}
+                    {r.cost_home_brl && (
+                      <span className="text-[11px] bg-emerald-500/15 text-emerald-300 px-2 py-1 rounded-full">
+                        R$ {Number(r.cost_home_brl).toFixed(2)}
+                      </span>
                     )}
                     {r.rating && (
                       <span className="text-[11px] bg-amber-500/15 text-amber-400 px-2 py-1 rounded-full">{"★".repeat(r.rating)}</span>

@@ -155,6 +155,8 @@ export type Database = {
         Row: {
           calories_per_serving: number | null
           category: string | null
+          cost_delivery_brl: number | null
+          cost_home_brl: number | null
           created_at: string
           description: string | null
           diet: string[] | null
@@ -175,6 +177,8 @@ export type Database = {
         Insert: {
           calories_per_serving?: number | null
           category?: string | null
+          cost_delivery_brl?: number | null
+          cost_home_brl?: number | null
           created_at?: string
           description?: string | null
           diet?: string[] | null
@@ -195,6 +199,8 @@ export type Database = {
         Update: {
           calories_per_serving?: number | null
           category?: string | null
+          cost_delivery_brl?: number | null
+          cost_home_brl?: number | null
           created_at?: string
           description?: string | null
           diet?: string[] | null

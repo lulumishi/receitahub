@@ -53,9 +53,12 @@ Conteúdo:
 ${source}
 """
 
-Inclua também uma estimativa de calorias por porção (calories_per_serving) — número inteiro em kcal. Se não for possível estimar, devolva null.
+Inclua também:
+- calories_per_serving: número inteiro em kcal por porção (null se não der pra estimar).
+- cost_home_brl: estimativa em reais (R$) do custo TOTAL dos ingredientes pra fazer a receita em casa, no Brasil (ex: 18.50). Considere preços médios de supermercado brasileiro em 2025.
+- cost_delivery_brl: estimativa em reais (R$) de quanto custaria pedir essa receita pronta via delivery (iFood/Rappi) no Brasil (ex: 45.00). Costuma ser 2-3x o custo caseiro.
 
-Responda APENAS no formato JSON: {"recipe":{"title":"","description":"","category":"prato principal","time_minutes":30,"difficulty":"fácil","diet":[],"calories_per_serving":350,"ingredients":["..."],"instructions":"1. ...\\n2. ..."}}`;
+Responda APENAS no formato JSON: {"recipe":{"title":"","description":"","category":"prato principal","time_minutes":30,"difficulty":"fácil","diet":[],"calories_per_serving":350,"cost_home_brl":18.50,"cost_delivery_brl":45.00,"ingredients":["..."],"instructions":"1. ...\\n2. ..."}}`;
 
     const aiRes = await fetch(AI_URL, {
       method: "POST",
