@@ -268,6 +268,8 @@ export function PantryChat() {
       instructions,
       diet: extractDiet(content),
       calories_per_serving: extractCalories(content),
+      cost_home_brl: extractCost(content, "home"),
+      cost_delivery_brl: extractCost(content, "delivery"),
       is_favorite: false,
     });
 
