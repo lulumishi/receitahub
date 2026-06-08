@@ -456,6 +456,17 @@ function MyRecipesPage() {
   const favorites = recipes.filter((r) => r.is_favorite);
   const totalCalories = calorieEntries.reduce((sum, e) => sum + e.calories, 0);
   const cookedCount = recipes.reduce((sum, r) => sum + (r.times_cooked ?? 0), 0);
+  const totalSavings = recipes.reduce((sum, r) => {
+    const home = Number(r.cost_home_brl ?? 0);
+    const delivery = Number(r.cost_delivery_brl ?? 0);
+    const times = r.times_cooked ?? 0;
+    const diff = delivery - home;
+    return sum + (diff > 0 ? diff * times : 0);
+  }, 0);
+  const recipesWithCost = recipes.filter((r) => r.cost_home_brl && r.cost_delivery_brl);
+  const avgSavePerMeal = recipesWithCost.length
+    ? recipesWithCost.reduce((s, r) => s + (Number(r.cost_delivery_brl) - Number(r.cost_home_brl)), 0) / recipesWithCost.length
+    : 0;
 
   let displayed = recipes;
   if (filter === "favoritas") displayed = favorites;
