@@ -364,7 +364,7 @@ function MyRecipesPage() {
       const today = new Date().toISOString().slice(0, 10);
       const [recipesRes, caloriesRes] = await Promise.all([
         supabase.from("user_recipes")
-          .select("id, title, image_url, category, time_minutes, difficulty, diet, description, is_favorite, ingredients, instructions, calories_per_serving, rating, notes, times_cooked")
+          .select("id, title, image_url, category, time_minutes, difficulty, diet, description, is_favorite, ingredients, instructions, calories_per_serving, rating, notes, times_cooked, cost_home_brl, cost_delivery_brl")
           .order("created_at", { ascending: false }),
         supabase.from("calorie_log")
           .select("id, recipe_id, recipe_title, calories, consumed_at")
