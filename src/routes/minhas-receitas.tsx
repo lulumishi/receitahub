@@ -438,6 +438,8 @@ function MyRecipesPage() {
       ingredients: partial.ingredients ?? null,
       diet: partial.diet ?? [],
       calories_per_serving: partial.calories_per_serving ?? null,
+      cost_home_brl: partial.cost_home_brl ?? null,
+      cost_delivery_brl: partial.cost_delivery_brl ?? null,
       time_minutes: partial.time_minutes ?? null,
       difficulty: partial.difficulty ?? null,
       is_favorite: false,
