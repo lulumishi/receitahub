@@ -21,6 +21,7 @@ type UserRecipe = {
   ingredients: string[] | null; instructions: string | null;
   calories_per_serving: number | null; rating: number | null;
   notes: string | null; times_cooked: number;
+  cost_home_brl: number | null; cost_delivery_brl: number | null;
 };
 
 type CalorieEntry = {
@@ -28,19 +29,25 @@ type CalorieEntry = {
   calories: number; consumed_at: string;
 };
 
-const CATEGORY_STYLE: Record<string, { emoji: string; bg: string }> = {
-  "prato principal": { emoji: "🍗", bg: "from-amber-900/40 to-amber-800/20" },
-  "massa":           { emoji: "🍝", bg: "from-orange-900/40 to-orange-800/20" },
-  "salada":          { emoji: "🥗", bg: "from-green-900/40 to-green-800/20" },
-  "sobremesa":       { emoji: "🍰", bg: "from-pink-900/40 to-pink-800/20" },
-  "pães":            { emoji: "🍞", bg: "from-yellow-900/40 to-yellow-800/20" },
-  "sopa":            { emoji: "🍲", bg: "from-red-900/40 to-red-800/20" },
-  "café da manhã":   { emoji: "🥞", bg: "from-yellow-900/40 to-amber-800/20" },
-  "lanche":          { emoji: "🥪", bg: "from-lime-900/40 to-lime-800/20" },
-  "bebida":          { emoji: "🥤", bg: "from-cyan-900/40 to-cyan-800/20" },
-  "conserva":        { emoji: "🫙", bg: "from-zinc-800/60 to-zinc-700/30" },
-  "acompanhamento":  { emoji: "🥦", bg: "from-emerald-900/40 to-emerald-800/20" },
-  "default":         { emoji: "🍽️", bg: "from-zinc-800/60 to-zinc-700/30" },
+const CATEGORY_STYLE: Record<string, { emojis: string; bg: string }> = {
+  "prato principal": { emojis: "🍗🥔🌿",  bg: "from-amber-900/40 to-amber-800/20" },
+  "massa":           { emojis: "🍝🍅🧀",  bg: "from-orange-900/40 to-orange-800/20" },
+  "salada":          { emojis: "🥗🥑🍅",  bg: "from-green-900/40 to-green-800/20" },
+  "sobremesa":       { emojis: "🍰🍓✨",  bg: "from-pink-900/40 to-pink-800/20" },
+  "pães":            { emojis: "🍞🌾🧈",  bg: "from-yellow-900/40 to-yellow-800/20" },
+  "pao":             { emojis: "🍞🌾🧈",  bg: "from-yellow-900/40 to-yellow-800/20" },
+  "sopa":            { emojis: "🍲🥕🌶️", bg: "from-red-900/40 to-red-800/20" },
+  "café da manhã":   { emojis: "🥞🍳☕",  bg: "from-yellow-900/40 to-amber-800/20" },
+  "lanche":          { emojis: "🥪🍟🥤",  bg: "from-lime-900/40 to-lime-800/20" },
+  "bebida":          { emojis: "🥤🍋🧊",  bg: "from-cyan-900/40 to-cyan-800/20" },
+  "conserva":        { emojis: "🫙🥒🌶️", bg: "from-zinc-800/60 to-zinc-700/30" },
+  "acompanhamento":  { emojis: "🥦🥕🌽",  bg: "from-emerald-900/40 to-emerald-800/20" },
+  "entrada":         { emojis: "🥟🧀🌿",  bg: "from-stone-800/60 to-stone-700/30" },
+  "peixe":           { emojis: "🐟🍋🌿",  bg: "from-sky-900/40 to-sky-800/20" },
+  "frango":          { emojis: "🍗🌶️🧄", bg: "from-amber-900/40 to-orange-800/20" },
+  "carne":           { emojis: "🥩🔥🧂",  bg: "from-red-900/50 to-amber-900/30" },
+  "vegano":          { emojis: "🌱🥑🥦",  bg: "from-green-900/40 to-emerald-800/20" },
+  "default":         { emojis: "🍽️✨🌿", bg: "from-zinc-800/60 to-zinc-700/30" },
 };
 
 function getCategoryStyle(category: string | null) {
@@ -50,12 +57,27 @@ function getCategoryStyle(category: string | null) {
 }
 
 function RecipeCover({ category, size = "card" }: { category: string | null; size?: "card" | "modal" }) {
-  const { emoji, bg } = getCategoryStyle(category);
+  const { emojis, bg } = getCategoryStyle(category);
   const h = size === "modal" ? "h-56" : "aspect-[4/3]";
+  const main = emojis.slice(0, 2); // primeiros 2 chars são geralmente o primeiro emoji+VS16
+  // Renderiza como cluster: 1 grande + 2 menores ao redor
+  const chars = Array.from(emojis);
   return (
     <div className={`${h} w-full bg-gradient-to-br ${bg} flex items-center justify-center relative overflow-hidden`}>
       <div className="absolute inset-0 bg-charcoal/20" />
-      <span className={`relative ${size === "modal" ? "text-8xl" : "text-6xl"} select-none drop-shadow-lg`}>{emoji}</span>
+      {size === "modal" ? (
+        <div className="relative flex items-center justify-center gap-3 select-none drop-shadow-lg">
+          {chars.map((c, i) => (
+            <span key={i} className={i === 0 ? "text-8xl" : "text-5xl opacity-80"}>{c}</span>
+          ))}
+        </div>
+      ) : (
+        <div className="relative select-none drop-shadow-lg">
+          <span className="text-6xl">{chars[0]}</span>
+          {chars[1] && <span className="absolute -top-2 -right-6 text-3xl opacity-80 rotate-12">{chars[1]}</span>}
+          {chars[2] && <span className="absolute -bottom-2 -left-6 text-3xl opacity-80 -rotate-12">{chars[2]}</span>}
+        </div>
+      )}
     </div>
   );
 }
