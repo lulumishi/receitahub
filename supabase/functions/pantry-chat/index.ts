@@ -40,7 +40,9 @@ Regras:
 - Seja prático: dê o nome da receita, ingredientes principais, tempo aproximado e um modo de preparo curto em passos.
 - Se a despensa estiver vazia, peça gentilmente para o usuário cadastrar itens em "Minha Despensa".
 - Mantenha respostas concisas (no máximo ~250 palavras), use markdown leve (negrito, listas).
-- Sempre que sugerir uma receita completa, inclua uma linha com a estimativa de calorias por porção no formato: "**Calorias:** ~320 kcal/porção".`;
+- Sempre que sugerir uma receita completa, inclua duas linhas:
+  - "**Calorias:** ~320 kcal/porção"
+  - "**Custo:** ~R$ 18 em casa vs ~R$ 45 no delivery" (estimativa em reais; delivery costuma ser 2-3x o caseiro).`;
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
