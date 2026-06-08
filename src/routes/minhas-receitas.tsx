@@ -517,6 +517,32 @@ function MyRecipesPage() {
           </div>
         </div>
 
+        {/* Painel Economia */}
+        <div className="mt-6 bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 border border-emerald-500/30 rounded-3xl p-6">
+          <div className="flex items-start justify-between flex-wrap gap-4">
+            <div>
+              <div className="text-xs uppercase tracking-widest text-emerald-400 mb-2">💰 Economia cozinhando em casa</div>
+              <div className="font-display text-5xl text-cream">
+                R$ {totalSavings.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+              <p className="text-xs text-cream/40 mt-2">
+                Total economizado vs pedir delivery, com base nas {cookedCount} refeições que você marcou como feitas.
+              </p>
+            </div>
+            {avgSavePerMeal > 0 && (
+              <div className="min-w-[200px] bg-charcoal/40 rounded-2xl p-4 space-y-2">
+                <div className="text-[11px] uppercase tracking-wider text-cream/50">Média por refeição</div>
+                <div className="font-display text-3xl text-emerald-300">
+                  R$ {avgSavePerMeal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+                <div className="text-[11px] text-cream/40">
+                  Estimativas da IA — preços médios BR 2025.
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Stats */}
         <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4">
           {[
