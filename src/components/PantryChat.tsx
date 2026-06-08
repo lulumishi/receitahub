@@ -190,6 +190,16 @@ function extractCalories(content: string): number | null {
   return null;
 }
 
+function extractCost(content: string, kind: "home" | "delivery"): number | null {
+  // Padrão preferido: "R$ 18 em casa vs R$ 45 no delivery"
+  const dual = content.match(/r\$\s*(\d{1,4}(?:[.,]\d{1,2})?)\s*em\s*casa[^\d]*r\$\s*(\d{1,4}(?:[.,]\d{1,2})?)/i);
+  if (dual) {
+    const n = parseFloat((kind === "home" ? dual[1] : dual[2]).replace(",", "."));
+    if (!isNaN(n) && n > 0 && n < 1000) return n;
+  }
+  return null;
+}
+
 function extractDescription(content: string, title: string): string {
   const titleNormalized = normalizeText(title);
   const line = content
