@@ -146,7 +146,7 @@ function RecipeDetailModal({ recipe, onClose, onDelete, onFavorite, onRate, onSa
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
       <div className="relative z-10 bg-charcoal border border-border rounded-t-3xl md:rounded-3xl w-full md:max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="relative rounded-t-3xl overflow-hidden">
-          <RecipeCover category={recipe.category} size="modal" />
+          <RecipeCover title={recipe.title} category={recipe.category} size="modal" />
           <button onClick={onClose} className="absolute top-4 right-4 h-8 w-8 flex items-center justify-center rounded-full bg-charcoal/80 text-cream hover:bg-charcoal transition text-lg">×</button>
           <button onClick={() => onFavorite(recipe.id, !recipe.is_favorite)}
             className={`absolute top-4 left-4 h-8 w-8 flex items-center justify-center rounded-full transition ${recipe.is_favorite ? "bg-blush text-charcoal" : "bg-charcoal/80 text-cream/60 hover:text-blush"}`}
