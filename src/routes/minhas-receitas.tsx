@@ -610,7 +610,7 @@ function MyRecipesPage() {
             {displayed.map((r) => (
               <article key={r.id} onClick={() => setSelectedRecipe(r)}
                 className="group cursor-pointer bg-charcoal-light rounded-2xl overflow-hidden border border-border hover:border-blush/40 transition-all">
-                <RecipeCover category={r.category} size="card" />
+                <RecipeCover title={r.title} category={r.category} size="card" />
                 <div className="p-5">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex-1">
