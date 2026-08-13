@@ -17,6 +17,7 @@ import { Route as MinhaDespensaRouteImport } from './routes/minha-despensa'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ListaComprasRouteImport } from './routes/lista-compras'
 import { Route as FotoRouteImport } from './routes/foto'
+import { Route as DietaRouteImport } from './routes/dieta'
 import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -60,6 +61,11 @@ const FotoRoute = FotoRouteImport.update({
   path: '/foto',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DietaRoute = DietaRouteImport.update({
+  id: '/dieta',
+  path: '/dieta',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CadastroRoute = CadastroRouteImport.update({
   id: '/cadastro',
   path: '/cadastro',
@@ -74,6 +80,7 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
+  '/dieta': typeof DietaRoute
   '/foto': typeof FotoRoute
   '/lista-compras': typeof ListaComprasRoute
   '/login': typeof LoginRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
+  '/dieta': typeof DietaRoute
   '/foto': typeof FotoRoute
   '/lista-compras': typeof ListaComprasRoute
   '/login': typeof LoginRoute
@@ -99,6 +107,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
+  '/dieta': typeof DietaRoute
   '/foto': typeof FotoRoute
   '/lista-compras': typeof ListaComprasRoute
   '/login': typeof LoginRoute
@@ -113,6 +122,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/cadastro'
+    | '/dieta'
     | '/foto'
     | '/lista-compras'
     | '/login'
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/cadastro'
+    | '/dieta'
     | '/foto'
     | '/lista-compras'
     | '/login'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/cadastro'
+    | '/dieta'
     | '/foto'
     | '/lista-compras'
     | '/login'
@@ -150,6 +162,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CadastroRoute: typeof CadastroRoute
+  DietaRoute: typeof DietaRoute
   FotoRoute: typeof FotoRoute
   ListaComprasRoute: typeof ListaComprasRoute
   LoginRoute: typeof LoginRoute
@@ -218,6 +231,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FotoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dieta': {
+      id: '/dieta'
+      path: '/dieta'
+      fullPath: '/dieta'
+      preLoaderRoute: typeof DietaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cadastro': {
       id: '/cadastro'
       path: '/cadastro'
@@ -238,6 +258,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CadastroRoute: CadastroRoute,
+  DietaRoute: DietaRoute,
   FotoRoute: FotoRoute,
   ListaComprasRoute: ListaComprasRoute,
   LoginRoute: LoginRoute,

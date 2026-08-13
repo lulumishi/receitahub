@@ -6,6 +6,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { generateDietPlan, type DietPlan } from "@/lib/ai.functions";
 import { toast } from "sonner";
 
@@ -150,7 +151,7 @@ function DietPage() {
           objective: objective.trim(),
           restrictions,
           profile_notes: notes.trim() || null,
-          generated_plan: result as unknown as Record<string, unknown>,
+          generated_plan: result as unknown as Json,
         })
         .select("id, title, created_at")
         .maybeSingle();
