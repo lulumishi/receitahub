@@ -1,5 +1,6 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { PantryChat } from "@/components/PantryChat";
 
 import appCss from "../styles.css?url";
@@ -64,8 +65,10 @@ function RootShell({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <AuthProvider>
-          {children}
-          <PantryChat />
+          <SubscriptionProvider>
+            {children}
+            <PantryChat />
+          </SubscriptionProvider>
         </AuthProvider>
         <Scripts />
       </body>

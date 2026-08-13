@@ -52,6 +52,69 @@ export type Database = {
           },
         ]
       }
+      chat_usage: {
+        Row: {
+          created_at: string
+          id: string
+          message_count: number
+          reference_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_count?: number
+          reference_date?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_count?: number
+          reference_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      diet_plans: {
+        Row: {
+          created_at: string
+          generated_plan: Json | null
+          id: string
+          objective: string
+          profile_notes: string | null
+          restrictions: string[] | null
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          generated_plan?: Json | null
+          id?: string
+          objective: string
+          profile_notes?: string | null
+          restrictions?: string[] | null
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          generated_plan?: Json | null
+          id?: string
+          objective?: string
+          profile_notes?: string | null
+          restrictions?: string[] | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pantry_items: {
         Row: {
           category: string
@@ -90,6 +153,41 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      photo_recognition_requests: {
+        Row: {
+          created_at: string
+          generated_recipe_id: string | null
+          id: string
+          image_url: string | null
+          recognized_item: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          generated_recipe_id?: string | null
+          id?: string
+          image_url?: string | null
+          recognized_item?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          generated_recipe_id?: string | null
+          id?: string
+          image_url?: string | null
+          recognized_item?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photo_recognition_requests_generated_recipe_id_fkey"
+            columns: ["generated_recipe_id"]
+            isOneToOne: false
+            referencedRelation: "user_recipes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -146,6 +244,42 @@ export type Database = {
           name?: string
           quantity?: string | null
           source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          current_period_end: string | null
+          id: string
+          payment_provider_id: string | null
+          plan_tier: Database["public"]["Enums"]["plan_tier"]
+          started_at: string
+          status: Database["public"]["Enums"]["subscription_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          payment_provider_id?: string | null
+          plan_tier?: Database["public"]["Enums"]["plan_tier"]
+          started_at?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          payment_provider_id?: string | null
+          plan_tier?: Database["public"]["Enums"]["plan_tier"]
+          started_at?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
           updated_at?: string
           user_id?: string
         }
@@ -225,10 +359,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_chat_usage: { Args: never; Returns: number }
     }
     Enums: {
-      [_ in never]: never
+      plan_tier: "free" | "basico" | "premium"
+      subscription_status: "active" | "canceled" | "expired"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -355,6 +490,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      plan_tier: ["free", "basico", "premium"],
+      subscription_status: ["active", "canceled", "expired"],
+    },
   },
 } as const
