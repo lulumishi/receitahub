@@ -4,9 +4,11 @@ import { MessageCircle, X, Send, Loader2, Sparkles, BookmarkPlus, Check } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Link } from "@tanstack/react-router";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -217,6 +219,7 @@ function extractDescription(content: string, title: string): string {
 
 export function PantryChat() {
   const { user } = useAuth();
+  const { tier, canChat, chatLimit, chatRemaining, registerChatMessage } = useSubscription();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -284,7 +287,12 @@ export function PantryChat() {
   async function send() {
     const text = input.trim();
     if (!text || loading) return;
+    if (!canChat) {
+      toast.error("Você atingiu o limite diário de mensagens do plano gratuito.");
+      return;
+    }
     setInput("");
+    await registerChatMessage();
     const userMsg: Msg = { role: "user", content: text };
     const next = [...messages, userMsg];
     setMessages(next);
@@ -391,7 +399,11 @@ export function PantryChat() {
             <Sparkles className="h-4 w-4" />
             <div className="flex-1">
               <p className="text-sm font-semibold">Chef Despensa</p>
-              <p className="text-[11px] opacity-80">Vendo sua despensa em tempo real</p>
+              <p className="text-[11px] opacity-80">
+                {chatLimit === null
+                  ? "Mensagens ilimitadas · plano " + tier
+                  : `${chatRemaining} de ${chatLimit} mensagens hoje`}
+              </p>
             </div>
           </div>
 
@@ -456,6 +468,16 @@ export function PantryChat() {
             )}
           </div>
 
+          {!canChat && (
+            <div className="border-t border-border bg-blush/[0.07] px-4 py-3 text-xs text-foreground">
+              Você usou suas {chatLimit} mensagens de hoje. 🍳{" "}
+              <Link to="/planos" className="font-medium text-primary underline">
+                Assine o básico
+              </Link>{" "}
+              para conversar sem limite.
+            </div>
+          )}
+
           {/* Input */}
           <form
             onSubmit={(e) => {
@@ -467,11 +489,11 @@ export function PantryChat() {
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="O que posso cozinhar hoje?"
-              disabled={loading}
+              placeholder={canChat ? "O que posso cozinhar hoje?" : "Limite diário atingido"}
+              disabled={loading || !canChat}
               className="flex-1"
             />
-            <Button type="submit" size="icon" disabled={loading || !input.trim()}>
+            <Button type="submit" size="icon" disabled={loading || !input.trim() || !canChat}>
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
