@@ -64,8 +64,10 @@ function RootShell({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <AuthProvider>
-          {children}
-          <PantryChat />
+          <SubscriptionProvider>
+            {children}
+            <PantryChat />
+          </SubscriptionProvider>
         </AuthProvider>
         <Scripts />
       </body>
