@@ -16,6 +16,7 @@ import { Route as MinhasReceitasRouteImport } from './routes/minhas-receitas'
 import { Route as MinhaDespensaRouteImport } from './routes/minha-despensa'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ListaComprasRouteImport } from './routes/lista-compras'
+import { Route as FotoRouteImport } from './routes/foto'
 import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -54,6 +55,11 @@ const ListaComprasRoute = ListaComprasRouteImport.update({
   path: '/lista-compras',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FotoRoute = FotoRouteImport.update({
+  id: '/foto',
+  path: '/foto',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CadastroRoute = CadastroRouteImport.update({
   id: '/cadastro',
   path: '/cadastro',
@@ -68,6 +74,7 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
+  '/foto': typeof FotoRoute
   '/lista-compras': typeof ListaComprasRoute
   '/login': typeof LoginRoute
   '/minha-despensa': typeof MinhaDespensaRoute
@@ -79,6 +86,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
+  '/foto': typeof FotoRoute
   '/lista-compras': typeof ListaComprasRoute
   '/login': typeof LoginRoute
   '/minha-despensa': typeof MinhaDespensaRoute
@@ -91,6 +99,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/cadastro': typeof CadastroRoute
+  '/foto': typeof FotoRoute
   '/lista-compras': typeof ListaComprasRoute
   '/login': typeof LoginRoute
   '/minha-despensa': typeof MinhaDespensaRoute
@@ -104,6 +113,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/cadastro'
+    | '/foto'
     | '/lista-compras'
     | '/login'
     | '/minha-despensa'
@@ -115,6 +125,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/cadastro'
+    | '/foto'
     | '/lista-compras'
     | '/login'
     | '/minha-despensa'
@@ -126,6 +137,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/cadastro'
+    | '/foto'
     | '/lista-compras'
     | '/login'
     | '/minha-despensa'
@@ -138,6 +150,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CadastroRoute: typeof CadastroRoute
+  FotoRoute: typeof FotoRoute
   ListaComprasRoute: typeof ListaComprasRoute
   LoginRoute: typeof LoginRoute
   MinhaDespensaRoute: typeof MinhaDespensaRoute
@@ -198,6 +211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ListaComprasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/foto': {
+      id: '/foto'
+      path: '/foto'
+      fullPath: '/foto'
+      preLoaderRoute: typeof FotoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cadastro': {
       id: '/cadastro'
       path: '/cadastro'
@@ -218,6 +238,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CadastroRoute: CadastroRoute,
+  FotoRoute: FotoRoute,
   ListaComprasRoute: ListaComprasRoute,
   LoginRoute: LoginRoute,
   MinhaDespensaRoute: MinhaDespensaRoute,
