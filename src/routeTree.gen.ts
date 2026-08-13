@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ReceitasRouteImport } from './routes/receitas'
+import { Route as PlanosRouteImport } from './routes/planos'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as MinhasReceitasRouteImport } from './routes/minhas-receitas'
 import { Route as MinhaDespensaRouteImport } from './routes/minha-despensa'
@@ -21,6 +22,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const ReceitasRoute = ReceitasRouteImport.update({
   id: '/receitas',
   path: '/receitas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlanosRoute = PlanosRouteImport.update({
+  id: '/planos',
+  path: '/planos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PerfilRoute = PerfilRouteImport.update({
@@ -67,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/minha-despensa': typeof MinhaDespensaRoute
   '/minhas-receitas': typeof MinhasReceitasRoute
   '/perfil': typeof PerfilRoute
+  '/planos': typeof PlanosRoute
   '/receitas': typeof ReceitasRoute
 }
 export interface FileRoutesByTo {
@@ -77,6 +84,7 @@ export interface FileRoutesByTo {
   '/minha-despensa': typeof MinhaDespensaRoute
   '/minhas-receitas': typeof MinhasReceitasRoute
   '/perfil': typeof PerfilRoute
+  '/planos': typeof PlanosRoute
   '/receitas': typeof ReceitasRoute
 }
 export interface FileRoutesById {
@@ -88,6 +96,7 @@ export interface FileRoutesById {
   '/minha-despensa': typeof MinhaDespensaRoute
   '/minhas-receitas': typeof MinhasReceitasRoute
   '/perfil': typeof PerfilRoute
+  '/planos': typeof PlanosRoute
   '/receitas': typeof ReceitasRoute
 }
 export interface FileRouteTypes {
@@ -100,6 +109,7 @@ export interface FileRouteTypes {
     | '/minha-despensa'
     | '/minhas-receitas'
     | '/perfil'
+    | '/planos'
     | '/receitas'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -110,6 +120,7 @@ export interface FileRouteTypes {
     | '/minha-despensa'
     | '/minhas-receitas'
     | '/perfil'
+    | '/planos'
     | '/receitas'
   id:
     | '__root__'
@@ -120,6 +131,7 @@ export interface FileRouteTypes {
     | '/minha-despensa'
     | '/minhas-receitas'
     | '/perfil'
+    | '/planos'
     | '/receitas'
   fileRoutesById: FileRoutesById
 }
@@ -131,6 +143,7 @@ export interface RootRouteChildren {
   MinhaDespensaRoute: typeof MinhaDespensaRoute
   MinhasReceitasRoute: typeof MinhasReceitasRoute
   PerfilRoute: typeof PerfilRoute
+  PlanosRoute: typeof PlanosRoute
   ReceitasRoute: typeof ReceitasRoute
 }
 
@@ -141,6 +154,13 @@ declare module '@tanstack/react-router' {
       path: '/receitas'
       fullPath: '/receitas'
       preLoaderRoute: typeof ReceitasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/planos': {
+      id: '/planos'
+      path: '/planos'
+      fullPath: '/planos'
+      preLoaderRoute: typeof PlanosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/perfil': {
@@ -203,6 +223,7 @@ const rootRouteChildren: RootRouteChildren = {
   MinhaDespensaRoute: MinhaDespensaRoute,
   MinhasReceitasRoute: MinhasReceitasRoute,
   PerfilRoute: PerfilRoute,
+  PlanosRoute: PlanosRoute,
   ReceitasRoute: ReceitasRoute,
 }
 export const routeTree = rootRouteImport
