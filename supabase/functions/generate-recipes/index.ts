@@ -8,6 +8,60 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// A resposta da IA pode vir truncada (limite de tokens), o que quebra JSON.parse.
+// Tentamos o parse normal e, se falhar, recuperamos apenas os objetos completos.
+function safeParseRecipes(text: string): unknown[] {
+  try {
+    const parsed = JSON.parse(text);
+    if (Array.isArray(parsed?.recipes)) return parsed.recipes;
+  } catch (_) {
+    // segue para o modo de recuperação
+  }
+
+  const key = text.indexOf('"recipes"');
+  const arrStart = key === -1 ? text.indexOf("[") : text.indexOf("[", key);
+  if (arrStart === -1) return [];
+
+  const recipes: unknown[] = [];
+  let depth = 0;
+  let objStart = -1;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = arrStart; i < text.length; i++) {
+    const ch = text[i];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === "\\") escaped = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') {
+      inString = true;
+      continue;
+    }
+    if (ch === "{") {
+      if (depth === 0) objStart = i;
+      depth++;
+      continue;
+    }
+    if (ch === "}") {
+      depth--;
+      if (depth === 0 && objStart !== -1) {
+        try {
+          recipes.push(JSON.parse(text.slice(objStart, i + 1)));
+        } catch (_) {
+          // ignora objeto inválido
+        }
+        objStart = -1;
+      }
+      continue;
+    }
+    if (ch === "]" && depth === 0) break;
+  }
+  return recipes;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
@@ -21,8 +75,8 @@ Deno.serve(async (req) => {
     const inspirations = ["nordestina", "mineira", "paulista", "gaúcha", "baiana", "amazônica", "italiana abrasileirada", "japonesa abrasileirada", "árabe abrasileirada", "portuguesa", "caipira", "contemporânea", "vegetariana criativa", "comfort food", "de boteco", "de festa", "de domingo em família", "saudável", "low carb", "rápida do dia a dia"];
     const picks = [...inspirations].sort(() => Math.random() - 0.5).slice(0, 3).join(", ");
     const variationPart = `Surpreenda com receitas variadas e criativas — evite os clássicos óbvios. Inspire-se em estilos como: ${picks}. Token de variação (use para diversificar, não cite): ${variationSeed}.`;
-    const systemPrompt = "Você é um chef brasileiro especialista e criativo. Sempre varia as sugestões — nunca repita as mesmas receitas óbvias. Sempre responde em JSON válido conforme solicitado, sem markdown, sem texto extra.";
-    const userPrompt = `Gere exatamente 6 receitas ${categoryPart}. ${dietPart} ${ingredientsPart} ${searchPart} ${variationPart} Responda APENAS com JSON válido sem markdown no formato: {"recipes":[{"id":"rec-001","title":"Nome","description":"Descrição curta","category":"prato principal","time":"30 min","time_minutes":30,"difficulty":"fácil","diet":[],"servings":4,"ingredients":["2 xícaras de arroz"],"instructions":"1. Passo um.\\n2. Passo dois.","nutrition":{"calories":320,"protein":8,"carbs":60,"fat":5}}]}`;
+    const systemPrompt = "Você é um chef brasileiro especialista e criativo. Sempre varia as sugestões — nunca repita as mesmas receitas óbvias. Sempre responde em JSON válido conforme solicitado, sem markdown, sem texto extra. Seja conciso: descrições com no máximo 140 caracteres e modo de preparo com no máximo 5 passos curtos.";
+    const userPrompt = `Gere exatamente 6 receitas ${categoryPart}. ${dietPart} ${ingredientsPart} ${searchPart} ${variationPart} Seja conciso para caber na resposta. Responda APENAS com JSON válido sem markdown no formato: {"recipes":[{"id":"rec-001","title":"Nome","description":"Descrição curta","category":"prato principal","time":"30 min","time_minutes":30,"difficulty":"fácil","diet":[],"servings":4,"ingredients":["2 xícaras de arroz"],"instructions":"1. Passo um.\\n2. Passo dois.","nutrition":{"calories":320,"protein":8,"carbs":60,"fat":5}}]}`;
 
     const aiRes = await fetch(AI_URL, {
       method: "POST",
@@ -37,6 +91,7 @@ Deno.serve(async (req) => {
           { role: "user", content: userPrompt },
         ],
         temperature: 1.1,
+        max_tokens: 12000,
         response_format: { type: "json_object" },
       }),
     });
@@ -54,8 +109,11 @@ Deno.serve(async (req) => {
     const aiData = await aiRes.json();
     const rawText = aiData?.choices?.[0]?.message?.content ?? "";
     const cleaned = rawText.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim();
-    const parsed = JSON.parse(cleaned);
-    return new Response(JSON.stringify({ recipes: parsed.recipes ?? [] }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const recipes = safeParseRecipes(cleaned);
+    if (recipes.length === 0) {
+      return new Response(JSON.stringify({ error: "Não conseguimos interpretar a resposta da IA. Tente gerar novamente." }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    return new Response(JSON.stringify({ recipes }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
     return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
