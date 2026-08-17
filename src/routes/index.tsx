@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AppHeader } from "@/components/AppHeader";
 import heroImg from "@/assets/landing-hero.jpg";
 import stepImg from "@/assets/landing-step.jpg";
 import { useEffect, useState } from "react";
