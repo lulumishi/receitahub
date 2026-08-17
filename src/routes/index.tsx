@@ -167,7 +167,6 @@ function LandingPage() {
   return (
     <div className="min-h-screen bg-charcoal text-cream overflow-x-hidden">
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Inter:wght@300;400;500;600&display=swap" />
-      <AppHeader />
 
       {/* HERO */}
       <section className="relative">
