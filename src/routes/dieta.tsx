@@ -2,7 +2,6 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Lock, Sparkles } from "lucide-react";
-import { AppHeader } from "@/components/AppHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -85,7 +84,6 @@ function DietPage() {
   if (authLoading || !session || subLoading) {
     return (
       <div className="min-h-screen bg-charcoal text-cream">
-        <AppHeader />
         <div className="py-24 text-center text-cream/50">carregando...</div>
       </div>
     );
@@ -94,7 +92,6 @@ function DietPage() {
   if (!hasDietPlans) {
     return (
       <div className="min-h-screen bg-charcoal text-cream">
-        <AppHeader />
         <main className="max-w-2xl mx-auto px-6 py-24 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-blush/40 bg-blush/10">
             <Lock className="text-blush" size={24} />
@@ -176,7 +173,6 @@ function DietPage() {
 
   return (
     <div className="min-h-screen bg-charcoal text-cream">
-      <AppHeader />
       <main className="max-w-4xl mx-auto px-6 lg:px-10 py-14">
         <p className="text-xs uppercase tracking-[0.25em] text-cream/40">premium</p>
         <h1 className="font-display italic text-4xl text-blush mt-3">seu cardápio sob medida 🥗</h1>

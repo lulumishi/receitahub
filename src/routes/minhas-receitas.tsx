@@ -1,5 +1,4 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { AppHeader } from "@/components/AppHeader";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -512,7 +511,6 @@ function MyRecipesPage() {
   return (
     <div className="min-h-screen bg-charcoal text-cream">
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Inter:wght@300;400;500;600&display=swap" />
-      <AppHeader />
 
       <section className="max-w-7xl mx-auto px-6 lg:px-10 pt-20 pb-16">
         <div className="flex items-end justify-between flex-wrap gap-6">

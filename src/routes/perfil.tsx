@@ -1,5 +1,4 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { AppHeader } from "@/components/AppHeader";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -149,7 +148,6 @@ function ProfilePage() {
         rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Inter:wght@300;400;500;600&display=swap"
       />
-      <AppHeader />
 
       <section className="max-w-4xl mx-auto px-6 lg:px-10 pt-20 pb-12">
         <div className="text-xs uppercase tracking-widest text-blush mb-3">sua conta</div>
