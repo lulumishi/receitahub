@@ -2,7 +2,6 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Camera, Loader2, BookmarkPlus, Lock } from "lucide-react";
-import { AppHeader } from "@/components/AppHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,7 +48,6 @@ function PhotoPage() {
   if (authLoading || !session || subLoading) {
     return (
       <div className="min-h-screen bg-charcoal text-cream">
-        <AppHeader />
         <div className="py-24 text-center text-cream/50">carregando...</div>
       </div>
     );
@@ -119,7 +117,6 @@ function PhotoPage() {
   if (!hasPhotoRecognition) {
     return (
       <div className="min-h-screen bg-charcoal text-cream">
-        <AppHeader />
         <main className="max-w-2xl mx-auto px-6 py-24 text-center">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-blush/40 bg-blush/10">
             <Lock className="text-blush" size={24} />
@@ -144,7 +141,6 @@ function PhotoPage() {
 
   return (
     <div className="min-h-screen bg-charcoal text-cream">
-      <AppHeader />
       <main className="max-w-3xl mx-auto px-6 lg:px-10 py-14">
         <p className="text-xs uppercase tracking-[0.25em] text-cream/40">reconhecimento por foto</p>
         <h1 className="font-display italic text-4xl text-blush mt-3">

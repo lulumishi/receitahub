@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Check, X } from "lucide-react";
-import { AppHeader } from "@/components/AppHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { PLANS, PLAN_LABEL, type PlanTier } from "@/lib/plans";
@@ -57,7 +56,6 @@ function PlansPage() {
 
   return (
     <div className="min-h-screen bg-charcoal text-cream">
-      <AppHeader />
 
       <main className="max-w-6xl mx-auto px-6 lg:px-10 py-16">
         <header className="max-w-2xl">
