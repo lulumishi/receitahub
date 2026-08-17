@@ -18,7 +18,7 @@ export function AppHeader() {
         { to: "/receitas", label: "receitas" },
         { to: "/minhas-receitas", label: "minhas receitas" },
         { to: "/minha-despensa", label: "minha despensa" },
-        { to: "/lista-compras", label: "lista de compras" },
+        { to: "/planos", label: "planos" },
         { to: "/foto", label: "foto" },
         { to: "/dieta", label: "dieta" },
       ] as const)
