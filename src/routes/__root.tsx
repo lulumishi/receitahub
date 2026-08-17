@@ -2,6 +2,7 @@ import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/r
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { PantryChat } from "@/components/PantryChat";
+import { AppHeader } from "@/components/AppHeader";
 
 import appCss from "../styles.css?url";
 
