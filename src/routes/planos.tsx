@@ -40,6 +40,10 @@ function PlansPage() {
       return;
     }
     if (next === tier) return;
+    if (next !== "free") {
+      navigate({ to: "/pagamento", search: { plan: next } });
+      return;
+    }
     setPending(next);
     const ok = await changePlan(next);
     setPending(null);
@@ -169,8 +173,8 @@ function PlansPage() {
         </section>
 
         <p className="text-xs text-cream/30 mt-12">
-          Projeto acadêmico — a cobrança real ainda não está integrada, a troca de plano é aplicada
-          imediatamente para fins de demonstração.
+          Projeto acadêmico — os dados do cartão são enviados por HTTPS ao gateway de pagamento e
+          nunca ficam salvos aqui; guardamos só o identificador da transação.
         </p>
       </main>
     </div>
