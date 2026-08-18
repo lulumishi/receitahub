@@ -75,8 +75,8 @@ Deno.serve(async (req) => {
     const inspirations = ["nordestina", "mineira", "paulista", "gaúcha", "baiana", "amazônica", "italiana abrasileirada", "japonesa abrasileirada", "árabe abrasileirada", "portuguesa", "caipira", "contemporânea", "vegetariana criativa", "comfort food", "de boteco", "de festa", "de domingo em família", "saudável", "low carb", "rápida do dia a dia"];
     const picks = [...inspirations].sort(() => Math.random() - 0.5).slice(0, 3).join(", ");
     const variationPart = `Surpreenda com receitas variadas e criativas — evite os clássicos óbvios. Inspire-se em estilos como: ${picks}. Token de variação (use para diversificar, não cite): ${variationSeed}.`;
-    const systemPrompt = "Você é um chef brasileiro especialista e criativo. Sempre varia as sugestões — nunca repita as mesmas receitas óbvias. Sempre responde em JSON válido conforme solicitado, sem markdown, sem texto extra. Seja conciso: descrições com no máximo 140 caracteres e modo de preparo com no máximo 5 passos curtos.";
-    const userPrompt = `Gere exatamente 6 receitas ${categoryPart}. ${dietPart} ${ingredientsPart} ${searchPart} ${variationPart} Seja conciso para caber na resposta. Responda APENAS com JSON válido sem markdown no formato: {"recipes":[{"id":"rec-001","title":"Nome","description":"Descrição curta","category":"prato principal","time":"30 min","time_minutes":30,"difficulty":"fácil","diet":[],"servings":4,"ingredients":["2 xícaras de arroz"],"instructions":"1. Passo um.\\n2. Passo dois.","nutrition":{"calories":320,"protein":8,"carbs":60,"fat":5}}]}`;
+    const systemPrompt = "Você é um chef brasileiro especialista e criativo. Sempre varia as sugestões e chama a função return_recipes exatamente uma vez. Responda em português do Brasil. O modo de preparo deve ser uma única string com até 5 passos numerados separados por quebras de linha.";
+    const userPrompt = `Gere exatamente 6 receitas ${categoryPart}. ${dietPart} ${ingredientsPart} ${searchPart} ${variationPart}`;
 
     const aiRes = await fetch(AI_URL, {
       method: "POST",
@@ -92,7 +92,48 @@ Deno.serve(async (req) => {
         ],
         temperature: 1.1,
         max_tokens: 12000,
-        response_format: { type: "json_object" },
+        tools: [{
+          type: "function",
+          function: {
+            name: "return_recipes",
+            description: "Retorna exatamente seis receitas completas",
+            parameters: {
+              type: "object",
+              properties: {
+                recipes: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      id: { type: "string" }, title: { type: "string" },
+                      description: { type: "string" }, category: { type: "string" },
+                      time: { type: "string" }, time_minutes: { type: "number" },
+                      difficulty: { type: "string" },
+                      diet: { type: "array", items: { type: "string" } },
+                      servings: { type: "number" },
+                      ingredients: { type: "array", items: { type: "string" } },
+                      instructions: { type: "string" },
+                      nutrition: {
+                        type: "object",
+                        properties: {
+                          calories: { type: "number" }, protein: { type: "number" },
+                          carbs: { type: "number" }, fat: { type: "number" },
+                        },
+                        required: ["calories", "protein", "carbs", "fat"],
+                        additionalProperties: false,
+                      },
+                    },
+                    required: ["id", "title", "description", "category", "time", "time_minutes", "difficulty", "diet", "servings", "ingredients", "instructions", "nutrition"],
+                    additionalProperties: false,
+                  },
+                },
+              },
+              required: ["recipes"],
+              additionalProperties: false,
+            },
+          },
+        }],
+        tool_choice: { type: "function", function: { name: "return_recipes" } },
       }),
     });
 
@@ -107,9 +148,22 @@ Deno.serve(async (req) => {
     }
 
     const aiData = await aiRes.json();
-    const rawText = aiData?.choices?.[0]?.message?.content ?? "";
-    const cleaned = rawText.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim();
-    const recipes = safeParseRecipes(cleaned);
+    const message = aiData?.choices?.[0]?.message;
+    const toolArguments = message?.tool_calls?.[0]?.function?.arguments;
+    let recipes: unknown[] = [];
+    if (typeof toolArguments === "string") {
+      try {
+        const parsed = JSON.parse(toolArguments);
+        if (Array.isArray(parsed?.recipes)) recipes = parsed.recipes;
+      } catch (error) {
+        console.error("Invalid return_recipes arguments", error);
+      }
+    }
+    if (recipes.length === 0) {
+      const rawText = typeof message?.content === "string" ? message.content : "";
+      const cleaned = rawText.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim();
+      recipes = safeParseRecipes(cleaned);
+    }
     if (recipes.length === 0) {
       return new Response(JSON.stringify({ error: "Não conseguimos interpretar a resposta da IA. Tente gerar novamente." }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
