@@ -86,7 +86,7 @@ function RecipeDetailModal({ recipe, onClose, onDelete, onFavorite, onRate, onSa
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
       <div className="relative z-10 bg-charcoal border border-border rounded-t-3xl md:rounded-3xl w-full md:max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="relative rounded-t-3xl overflow-hidden">
-          <RecipeCover title={recipe.title} category={recipe.category} size="modal" />
+          <RecipeCover title={recipe.title} category={recipe.category} ingredients={recipe.ingredients} size="modal" />
           <button onClick={onClose} className="absolute top-4 right-4 h-8 w-8 flex items-center justify-center rounded-full bg-charcoal/80 text-cream hover:bg-charcoal transition text-lg">×</button>
           <button onClick={() => onFavorite(recipe.id, !recipe.is_favorite)}
             className={`absolute top-4 left-4 h-8 w-8 flex items-center justify-center rounded-full transition ${recipe.is_favorite ? "bg-blush text-charcoal" : "bg-charcoal/80 text-cream/60 hover:text-blush"}`}
@@ -549,7 +549,7 @@ function MyRecipesPage() {
             {displayed.map((r) => (
               <article key={r.id} onClick={() => setSelectedRecipe(r)}
                 className="group cursor-pointer bg-charcoal-light rounded-2xl overflow-hidden border border-border hover:border-blush/40 transition-all">
-                <RecipeCover title={r.title} category={r.category} size="card" />
+                <RecipeCover title={r.title} category={r.category} ingredients={r.ingredients} size="card" />
                 <div className="p-5">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex-1">
