@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { getRecipeStyle } from "@/lib/recipe-emoji";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,68 +29,8 @@ type CalorieEntry = {
   calories: number; consumed_at: string;
 };
 
-const CATEGORY_STYLE: Record<string, { emojis: string; bg: string }> = {
-  "prato principal": { emojis: "🍗🥔🌿",  bg: "from-amber-900/40 to-amber-800/20" },
-  "massa":           { emojis: "🍝🍅🧀",  bg: "from-orange-900/40 to-orange-800/20" },
-  "salada":          { emojis: "🥗🥑🍅",  bg: "from-green-900/40 to-green-800/20" },
-  "sobremesa":       { emojis: "🍰🍓✨",  bg: "from-pink-900/40 to-pink-800/20" },
-  "pães":            { emojis: "🍞🌾🧈",  bg: "from-yellow-900/40 to-yellow-800/20" },
-  "pao":             { emojis: "🍞🌾🧈",  bg: "from-yellow-900/40 to-yellow-800/20" },
-  "sopa":            { emojis: "🍲🥕🌶️", bg: "from-red-900/40 to-red-800/20" },
-  "café da manhã":   { emojis: "🥞🍳☕",  bg: "from-yellow-900/40 to-amber-800/20" },
-  "lanche":          { emojis: "🥪🍟🥤",  bg: "from-lime-900/40 to-lime-800/20" },
-  "bebida":          { emojis: "🥤🍋🧊",  bg: "from-cyan-900/40 to-cyan-800/20" },
-  "conserva":        { emojis: "🫙🥒🌶️", bg: "from-zinc-800/60 to-zinc-700/30" },
-  "acompanhamento":  { emojis: "🥦🥕🌽",  bg: "from-emerald-900/40 to-emerald-800/20" },
-  "entrada":         { emojis: "🥟🧀🌿",  bg: "from-stone-800/60 to-stone-700/30" },
-  "peixe":           { emojis: "🐟🍋🌿",  bg: "from-sky-900/40 to-sky-800/20" },
-  "frango":          { emojis: "🍗🌶️🧄", bg: "from-amber-900/40 to-orange-800/20" },
-  "carne":           { emojis: "🥩🔥🧂",  bg: "from-red-900/50 to-amber-900/30" },
-  "vegano":          { emojis: "🌱🥑🥦",  bg: "from-green-900/40 to-emerald-800/20" },
-  "default":         { emojis: "🍽️✨🌿", bg: "from-zinc-800/60 to-zinc-700/30" },
-};
-
-// Palavras-chave no título têm prioridade sobre a categoria
-const TITLE_KEYWORDS: Array<{ match: RegExp; emojis: string; bg: string }> = [
-  { match: /morango|framboesa|frutas vermelhas/i, emojis: "🍓🥣🌿", bg: "from-pink-900/40 to-rose-800/20" },
-  { match: /banana/i,             emojis: "🍌🥣✨", bg: "from-yellow-900/40 to-amber-800/20" },
-  { match: /bowl|tropical|smoothie|açaí|acai/i, emojis: "🥣🍓🥭", bg: "from-fuchsia-900/40 to-pink-800/20" },
-  { match: /abacaxi/i,            emojis: "🍍🌴✨", bg: "from-yellow-900/40 to-lime-800/20" },
-  { match: /manga|mango/i,        emojis: "🥭🌴✨", bg: "from-orange-900/40 to-amber-800/20" },
-  { match: /chocolate|brigadeiro|brownie|cacau/i, emojis: "🍫🧁✨", bg: "from-amber-950/60 to-stone-900/40" },
-  { match: /bolo|cake/i,          emojis: "🎂🧁✨", bg: "from-pink-900/40 to-rose-800/20" },
-  { match: /teriyaki|japon|sushi|missô|misso|ramen|yakisoba/i, emojis: "🍱🥢🍣", bg: "from-red-950/50 to-stone-900/40" },
-  { match: /frango|chicken|galinha/i, emojis: "🍗🌶️🧄", bg: "from-amber-900/40 to-orange-800/20" },
-  { match: /carne|bife|picanha|hambúrguer|hamburguer|burger/i, emojis: "🥩🔥🧂", bg: "from-red-900/50 to-amber-900/30" },
-  { match: /peixe|salmão|salmao|atum|tilápia|tilapia/i, emojis: "🐟🍋🌿", bg: "from-sky-900/40 to-cyan-800/20" },
-  { match: /camarão|camarao|frutos do mar/i, emojis: "🦐🍋🌶️", bg: "from-orange-900/40 to-red-800/20" },
-  { match: /macarrão|macarrao|massa|spaghetti|nhoque|lasanha|pasta/i, emojis: "🍝🍅🧀", bg: "from-orange-900/40 to-red-800/20" },
-  { match: /pizza/i,              emojis: "🍕🍅🌿", bg: "from-red-900/40 to-orange-800/20" },
-  { match: /salada/i,             emojis: "🥗🥑🍅", bg: "from-green-900/40 to-emerald-800/20" },
-  { match: /sopa|caldo|canja/i,   emojis: "🍲🥕🌶️", bg: "from-red-900/40 to-amber-800/20" },
-  { match: /pão|pao|bread|focaccia/i, emojis: "🍞🌾🧈", bg: "from-yellow-900/40 to-amber-800/20" },
-  { match: /panqueca|pancake|waffle/i, emojis: "🥞🍯🍓", bg: "from-amber-900/40 to-yellow-800/20" },
-  { match: /ovo|omelete|fritada/i, emojis: "🍳🧀🌿", bg: "from-yellow-900/40 to-orange-800/20" },
-  { match: /arroz|risoto/i,       emojis: "🍚🌿✨", bg: "from-stone-800/60 to-amber-900/30" },
-  { match: /feijão|feijao|feijoada/i, emojis: "🫘🥓🌿", bg: "from-stone-900/60 to-amber-950/40" },
-  { match: /taco|burrito|nacho|guacamole/i, emojis: "🌮🌶️🥑", bg: "from-orange-900/40 to-red-800/20" },
-  { match: /curry|indiana|tikka/i, emojis: "🍛🌶️🧄", bg: "from-amber-900/40 to-orange-800/20" },
-  { match: /sorvete|gelato|picolé|picole/i, emojis: "🍦🍓✨", bg: "from-pink-900/40 to-cyan-800/20" },
-  { match: /torta|quiche/i,       emojis: "🥧🍓✨", bg: "from-amber-900/40 to-rose-800/20" },
-  { match: /vegano|vegetar|legumes|verduras/i, emojis: "🥦🥕🌽", bg: "from-emerald-900/40 to-green-800/20" },
-  { match: /suco|drink|limonada|chá/i, emojis: "🥤🍋🧊", bg: "from-cyan-900/40 to-sky-800/20" },
-];
-
-function getRecipeStyle(title: string | null, category: string | null) {
-  const hit = TITLE_KEYWORDS.find((k) => k.match.test(title ?? ""));
-  if (hit) return { emojis: hit.emojis, bg: hit.bg };
-  const lower = category?.toLowerCase() ?? "";
-  const key = Object.keys(CATEGORY_STYLE).find((k) => lower.includes(k));
-  return CATEGORY_STYLE[key ?? "default"];
-}
-
-function RecipeCover({ title, category, size = "card" }: { title?: string | null; category: string | null; size?: "card" | "modal" }) {
-  const { emojis, bg } = getRecipeStyle(title ?? null, category);
+function RecipeCover({ title, category, ingredients, size = "card" }: { title?: string | null; category: string | null; ingredients?: string[] | null; size?: "card" | "modal" }) {
+  const { emojis, bg } = getRecipeStyle(title, category, ingredients);
   const h = size === "modal" ? "h-56" : "aspect-[4/3]";
   const chars = Array.from(emojis);
   return (
