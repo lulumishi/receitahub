@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { getRecipeStyle } from "@/lib/recipe-emoji";
 
 export const Route = createFileRoute("/receitas")({
   component: RecipesPage,
@@ -16,30 +17,6 @@ export const Route = createFileRoute("/receitas")({
 const CATEGORY_FILTERS = ["todas", "prato principal", "massa", "salada", "sobremesa", "pães", "sopa", "lanche"];
 const DIET_FILTERS = ["vegano", "vegetariano", "sem glúten", "low carb"];
 
-const CATEGORY_STYLE: Record<string, { emoji: string; bg: string }> = {
-  "prato principal": { emoji: "🍗", bg: "from-amber-900/40 to-amber-800/20" },
-  "massa":           { emoji: "🍝", bg: "from-orange-900/40 to-orange-800/20" },
-  "salada":          { emoji: "🥗", bg: "from-green-900/40 to-green-800/20" },
-  "sobremesa":       { emoji: "🍰", bg: "from-pink-900/40 to-pink-800/20" },
-  "pães":            { emoji: "🍞", bg: "from-yellow-900/40 to-yellow-800/20" },
-  "sopa":            { emoji: "🍲", bg: "from-red-900/40 to-red-800/20" },
-  "café da manhã":   { emoji: "🥞", bg: "from-yellow-900/40 to-amber-800/20" },
-  "lanche":          { emoji: "🥪", bg: "from-lime-900/40 to-lime-800/20" },
-  "bebida":          { emoji: "🥤", bg: "from-cyan-900/40 to-cyan-800/20" },
-  "conserva":        { emoji: "🫙", bg: "from-zinc-800/60 to-zinc-700/30" },
-  "acompanhamento":  { emoji: "🥦", bg: "from-emerald-900/40 to-emerald-800/20" },
-  "frutos do mar":   { emoji: "🦐", bg: "from-blue-900/40 to-blue-800/20" },
-  "carne":           { emoji: "🥩", bg: "from-red-900/50 to-red-800/20" },
-  "vegano":          { emoji: "🌱", bg: "from-green-900/50 to-green-800/20" },
-  "default":         { emoji: "🍽️", bg: "from-zinc-800/60 to-zinc-700/30" },
-};
-
-function getCategoryStyle(category: string) {
-  const lower = category?.toLowerCase() ?? "";
-  const key = Object.keys(CATEGORY_STYLE).find((k) => lower.includes(k));
-  return CATEGORY_STYLE[key ?? "default"];
-}
-
 type Nutrition = { calories: number; protein: number; carbs: number; fat: number };
 type Recipe = {
   id: string; title: string; description: string; category: string;
@@ -47,13 +24,26 @@ type Recipe = {
   servings: number; ingredients: string[]; instructions: string; nutrition?: Nutrition;
 };
 
-function RecipeCover({ category, size = "card" }: { category: string; size?: "card" | "modal" }) {
-  const { emoji, bg } = getCategoryStyle(category);
+function RecipeCover({ title, category, ingredients, size = "card" }: { title?: string; category: string; ingredients?: string[]; size?: "card" | "modal" }) {
+  const { emojis, bg } = getRecipeStyle(title, category, ingredients);
+  const chars = Array.from(emojis);
   const h = size === "modal" ? "h-56" : "aspect-[4/3]";
   return (
     <div className={`${h} w-full bg-gradient-to-br ${bg} flex items-center justify-center relative overflow-hidden`}>
       <div className="absolute inset-0 bg-charcoal/20" />
-      <span className={`relative ${size === "modal" ? "text-8xl" : "text-6xl"} select-none drop-shadow-lg`}>{emoji}</span>
+      {size === "modal" ? (
+        <div className="relative flex items-center justify-center gap-3 select-none drop-shadow-lg">
+          {chars.map((c, i) => (
+            <span key={i} className={i === 0 ? "text-8xl" : "text-5xl opacity-80"}>{c}</span>
+          ))}
+        </div>
+      ) : (
+        <div className="relative select-none drop-shadow-lg">
+          <span className="text-6xl">{chars[0]}</span>
+          {chars[1] && <span className="absolute -top-2 -right-6 text-3xl opacity-80 rotate-12">{chars[1]}</span>}
+          {chars[2] && <span className="absolute -bottom-2 -left-6 text-3xl opacity-80 -rotate-12">{chars[2]}</span>}
+        </div>
+      )}
     </div>
   );
 }
@@ -84,7 +74,7 @@ function RecipeModal({ recipe, onClose, onSave, saving, saved }: {
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
       <div className="relative z-10 bg-charcoal border border-border rounded-t-3xl md:rounded-3xl w-full md:max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="relative rounded-t-3xl overflow-hidden">
-          <RecipeCover category={recipe.category} size="modal" />
+          <RecipeCover title={recipe.title} category={recipe.category} ingredients={recipe.ingredients} size="modal" />
           <button onClick={onClose} className="absolute top-4 right-4 h-8 w-8 flex items-center justify-center rounded-full bg-charcoal/80 text-cream hover:bg-charcoal transition text-lg">×</button>
           <div className="absolute bottom-4 left-6 right-6">
             <div className="flex flex-wrap gap-2 mb-2">
@@ -166,7 +156,7 @@ function RecipeCard({ recipe, pantry, onOpen, onSave, saving, saved }: {
     <article className="group relative bg-charcoal-light rounded-2xl overflow-hidden border border-border hover:border-blush/40 transition-all">
       <div className="cursor-pointer" onClick={() => onOpen(recipe)}>
         <div className="relative overflow-hidden">
-          <RecipeCover category={recipe.category} size="card" />
+          <RecipeCover title={recipe.title} category={recipe.category} ingredients={recipe.ingredients} size="card" />
           <div className="absolute inset-0 bg-gradient-to-t from-charcoal/60 to-transparent" />
           {pantry.length > 0 && matchPct > 0 && (
             <div className="absolute top-3 left-3 bg-charcoal/80 backdrop-blur-sm rounded-full px-2.5 py-1 text-xs text-blush">{matchPct}% na despensa</div>
