@@ -476,11 +476,11 @@ export function PantryChat() {
 
           {!canChat && (
             <div className="border-t border-border bg-blush/[0.07] px-4 py-3 text-xs text-foreground">
-              Você usou suas {chatLimit} mensagens de hoje. 🍳{" "}
+              Você atingiu o limite de mensagens de hoje. 🍳{" "}
               <Link to="/planos" className="font-medium text-primary underline">
-                Assine o básico
+                Assine um plano
               </Link>{" "}
-              para conversar sem limite.
+              para conversar sem limites.
             </div>
           )}
 
