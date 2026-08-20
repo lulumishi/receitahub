@@ -1,6 +1,6 @@
 export type PlanTier = "free" | "basico" | "premium";
 
-export const FREE_CHAT_DAILY_LIMIT = 5;
+export const FREE_CHAT_DAILY_LIMIT = 10;
 
 export type PlanDefinition = {
   tier: PlanTier;

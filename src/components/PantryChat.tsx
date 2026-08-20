@@ -288,7 +288,9 @@ export function PantryChat() {
     const text = input.trim();
     if (!text || loading) return;
     if (!canChat) {
-      toast.error("Você atingiu o limite diário de mensagens do plano gratuito.");
+      toast.error(
+        "Você atingiu o limite de mensagens de hoje. Assine um plano para conversar sem limites.",
+      );
       return;
     }
     setInput("");
@@ -408,7 +410,7 @@ export function PantryChat() {
               <p className="text-[11px] opacity-80">
                 {chatLimit === null
                   ? "Mensagens ilimitadas · plano " + tier
-                  : `${chatRemaining} de ${chatLimit} mensagens hoje`}
+                  : `${chatRemaining} de ${chatLimit} mensagens restantes hoje`}
               </p>
             </div>
           </div>
@@ -476,11 +478,11 @@ export function PantryChat() {
 
           {!canChat && (
             <div className="border-t border-border bg-blush/[0.07] px-4 py-3 text-xs text-foreground">
-              Você usou suas {chatLimit} mensagens de hoje. 🍳{" "}
+              Você atingiu o limite de mensagens de hoje. 🍳{" "}
               <Link to="/planos" className="font-medium text-primary underline">
-                Assine o básico
+                Assine um plano
               </Link>{" "}
-              para conversar sem limite.
+              para conversar sem limites.
             </div>
           )}
 
