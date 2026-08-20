@@ -18,7 +18,7 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
 
     // Validação server-side do limite diário do plano gratuito
-    const FREE_CHAT_DAILY_LIMIT = 5;
+    const FREE_CHAT_DAILY_LIMIT = 10;
     const authHeader = req.headers.get("Authorization") ?? "";
     const token = authHeader.replace("Bearer ", "").trim();
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
