@@ -17,6 +17,43 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY não configurada");
 
+    // Validação server-side do limite diário do plano gratuito
+    const FREE_CHAT_DAILY_LIMIT = 5;
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const token = authHeader.replace("Bearer ", "").trim();
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    if (token && token !== anonKey) {
+      const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+        headers: { Authorization: `Bearer ${token}`, apikey: anonKey },
+      });
+      if (userRes.ok) {
+        const user = await userRes.json();
+        const rest = async (path: string) =>
+          fetch(`${supabaseUrl}/rest/v1/${path}`, {
+            headers: { Authorization: `Bearer ${token}`, apikey: anonKey },
+          }).then((r) => (r.ok ? r.json() : []));
+        const today = new Date().toISOString().slice(0, 10);
+        const [subs, usage] = await Promise.all([
+          rest(`subscriptions?user_id=eq.${user.id}&select=plan_tier,status`),
+          rest(
+            `chat_usage?user_id=eq.${user.id}&reference_date=eq.${today}&select=message_count`,
+          ),
+        ]);
+        const sub = subs?.[0];
+        const tier = sub && sub.status === "active" ? sub.plan_tier : "free";
+        const used = usage?.[0]?.message_count ?? 0;
+        if (tier === "free" && used > FREE_CHAT_DAILY_LIMIT) {
+          return new Response(
+            JSON.stringify({
+              error: `Limite diário de ${FREE_CHAT_DAILY_LIMIT} mensagens do plano gratuito atingido.`,
+            }),
+            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+      }
+    }
+
     const pantryList =
       Array.isArray(pantry) && pantry.length
         ? pantry
