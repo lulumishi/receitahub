@@ -300,11 +300,15 @@ export function PantryChat() {
 
     try {
       const pantry = await fetchPantry();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken =
+        sessionData.session?.access_token ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       const resp = await fetch(CHAT_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
           messages: next.map((m) => ({ role: m.role, content: m.content })),
@@ -313,7 +317,9 @@ export function PantryChat() {
       });
 
       if (!resp.ok || !resp.body) {
-        if (resp.status === 429) toast.error("Muitas requisições. Aguarde um momento.");
+        const payload = await resp.json().catch(() => null);
+        if (resp.status === 429)
+          toast.error(payload?.error ?? "Muitas requisições. Aguarde um momento.");
         else if (resp.status === 402) toast.error("Créditos de IA esgotados.");
         else toast.error("Erro ao falar com o chef.");
         setLoading(false);
