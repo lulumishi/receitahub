@@ -317,7 +317,9 @@ export function PantryChat() {
       });
 
       if (!resp.ok || !resp.body) {
-        if (resp.status === 429) toast.error("Muitas requisições. Aguarde um momento.");
+        const payload = await resp.json().catch(() => null);
+        if (resp.status === 429)
+          toast.error(payload?.error ?? "Muitas requisições. Aguarde um momento.");
         else if (resp.status === 402) toast.error("Créditos de IA esgotados.");
         else toast.error("Erro ao falar com o chef.");
         setLoading(false);
