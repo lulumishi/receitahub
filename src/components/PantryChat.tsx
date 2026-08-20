@@ -288,7 +288,9 @@ export function PantryChat() {
     const text = input.trim();
     if (!text || loading) return;
     if (!canChat) {
-      toast.error("Você atingiu o limite diário de mensagens do plano gratuito.");
+      toast.error(
+        "Você atingiu o limite de mensagens de hoje. Assine um plano para conversar sem limites.",
+      );
       return;
     }
     setInput("");
