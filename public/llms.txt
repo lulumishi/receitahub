@@ -1,0 +1,14 @@
+# receitahub
+
+> Aplicativo brasileiro de receitas com IA: você cadastra o que tem na despensa e recebe receitas em português, lista de compras e um chef virtual que conversa sobre o que dá para cozinhar hoje.
+
+## Pages
+
+- [Início](/): Como funciona o receitahub, da despensa ao cardápio sem desperdício.
+- [Receitas](/receitas): Receitas em português geradas por IA a partir dos ingredientes disponíveis.
+- [Planos](/planos): Planos Gratuito, Básico e Premium com limites e recursos de cada um.
+
+## Optional
+
+- [Receita por foto](/foto): Reconhecimento de ingredientes a partir de uma foto da prateleira.
+- [Plano de dieta](/dieta): Cardápios de 7 dias personalizados no plano Premium.
