@@ -408,7 +408,7 @@ export function PantryChat() {
               <p className="text-[11px] opacity-80">
                 {chatLimit === null
                   ? "Mensagens ilimitadas · plano " + tier
-                  : `${chatRemaining} de ${chatLimit} mensagens hoje`}
+                  : `${chatRemaining} de ${chatLimit} mensagens restantes hoje`}
               </p>
             </div>
           </div>
