@@ -171,6 +171,34 @@ function DietPage() {
     if (data?.generated_plan) setPlan(data.generated_plan as unknown as DietPlan);
   };
 
+  const confirmRename = async (id: string) => {
+    const title = renameValue.trim();
+    if (!title) {
+      toast.error("Dê um nome ao plano.");
+      return;
+    }
+    const { error } = await supabase.from("diet_plans").update({ title }).eq("id", id);
+    if (error) {
+      toast.error("Não consegui renomear o plano.");
+      return;
+    }
+    setHistory((prev) => prev.map((h) => (h.id === id ? { ...h, title } : h)));
+    setRenamingId(null);
+    toast.success("Plano renomeado! ✏️");
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Apagar este plano de dieta?")) return;
+    const { error } = await supabase.from("diet_plans").delete().eq("id", id);
+    if (error) {
+      toast.error("Não consegui apagar o plano.");
+      return;
+    }
+    setHistory((prev) => prev.filter((h) => h.id !== id));
+    toast.success("Plano apagado. 🗑️");
+  };
+
+
   return (
     <div className="min-h-screen bg-charcoal text-cream">
       <main className="max-w-4xl mx-auto px-6 lg:px-10 py-14">
