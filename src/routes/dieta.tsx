@@ -63,6 +63,9 @@ function DietPage() {
   const [history, setHistory] = useState<{ id: string; title: string | null; created_at: string }[]>(
     [],
   );
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+
 
   useEffect(() => {
     if (!authLoading && !session) navigate({ to: "/login" });
