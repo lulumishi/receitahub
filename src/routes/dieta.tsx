@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Lock, Sparkles } from "lucide-react";
+import { Check, Loader2, Lock, Pencil, Sparkles, Trash2, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -63,6 +63,9 @@ function DietPage() {
   const [history, setHistory] = useState<{ id: string; title: string | null; created_at: string }[]>(
     [],
   );
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+
 
   useEffect(() => {
     if (!authLoading && !session) navigate({ to: "/login" });
@@ -171,6 +174,34 @@ function DietPage() {
     if (data?.generated_plan) setPlan(data.generated_plan as unknown as DietPlan);
   };
 
+  const confirmRename = async (id: string) => {
+    const title = renameValue.trim();
+    if (!title) {
+      toast.error("Dê um nome ao plano.");
+      return;
+    }
+    const { error } = await supabase.from("diet_plans").update({ title }).eq("id", id);
+    if (error) {
+      toast.error("Não consegui renomear o plano.");
+      return;
+    }
+    setHistory((prev) => prev.map((h) => (h.id === id ? { ...h, title } : h)));
+    setRenamingId(null);
+    toast.success("Plano renomeado! ✏️");
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Apagar este plano de dieta?")) return;
+    const { error } = await supabase.from("diet_plans").delete().eq("id", id);
+    if (error) {
+      toast.error("Não consegui apagar o plano.");
+      return;
+    }
+    setHistory((prev) => prev.filter((h) => h.id !== id));
+    toast.success("Plano apagado. 🗑️");
+  };
+
+
   return (
     <div className="min-h-screen bg-charcoal text-cream">
       <main className="max-w-4xl mx-auto px-6 lg:px-10 py-14">
@@ -262,20 +293,75 @@ function DietPage() {
         {history.length > 0 && (
           <section className="mt-8">
             <h2 className="text-sm text-cream/50">planos salvos</h2>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-3 grid gap-2">
               {history.map((h) => (
-                <button
+                <div
                   key={h.id}
-                  onClick={() => openHistory(h.id)}
-                  className="rounded-full border border-border px-3 py-1.5 text-xs text-cream/60 hover:border-blush hover:text-blush transition"
+                  className="flex items-center gap-2 rounded-xl border border-border px-3 py-2"
                 >
-                  {h.title || "plano"} ·{" "}
-                  {new Date(h.created_at).toLocaleDateString("pt-BR")}
-                </button>
+                  {renamingId === h.id ? (
+                    <>
+                      <input
+                        autoFocus
+                        value={renameValue}
+                        onChange={(e) => setRenameValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") confirmRename(h.id);
+                          if (e.key === "Escape") setRenamingId(null);
+                        }}
+                        className="flex-1 rounded-lg border border-border bg-charcoal px-3 py-1.5 text-xs text-cream focus:border-blush focus:outline-none"
+                      />
+                      <button
+                        onClick={() => confirmRename(h.id)}
+                        aria-label="salvar nome"
+                        className="rounded-full p-1.5 text-blush hover:bg-blush/10 transition"
+                      >
+                        <Check size={14} />
+                      </button>
+                      <button
+                        onClick={() => setRenamingId(null)}
+                        aria-label="cancelar"
+                        className="rounded-full p-1.5 text-cream/50 hover:text-cream transition"
+                      >
+                        <X size={14} />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => openHistory(h.id)}
+                        className="flex-1 text-left text-xs text-cream/65 hover:text-blush transition"
+                      >
+                        {h.title || "plano"} ·{" "}
+                        <span className="text-cream/35">
+                          {new Date(h.created_at).toLocaleDateString("pt-BR")}
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setRenamingId(h.id);
+                          setRenameValue(h.title || "");
+                        }}
+                        aria-label="renomear plano"
+                        className="rounded-full p-1.5 text-cream/45 hover:text-blush hover:bg-blush/10 transition"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(h.id)}
+                        aria-label="apagar plano"
+                        className="rounded-full p-1.5 text-cream/45 hover:text-red-400 hover:bg-red-400/10 transition"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </>
+                  )}
+                </div>
               ))}
             </div>
           </section>
         )}
+
 
         {plan && (
           <section className="mt-10">
