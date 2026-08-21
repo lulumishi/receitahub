@@ -262,20 +262,75 @@ function DietPage() {
         {history.length > 0 && (
           <section className="mt-8">
             <h2 className="text-sm text-cream/50">planos salvos</h2>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-3 grid gap-2">
               {history.map((h) => (
-                <button
+                <div
                   key={h.id}
-                  onClick={() => openHistory(h.id)}
-                  className="rounded-full border border-border px-3 py-1.5 text-xs text-cream/60 hover:border-blush hover:text-blush transition"
+                  className="flex items-center gap-2 rounded-xl border border-border px-3 py-2"
                 >
-                  {h.title || "plano"} ·{" "}
-                  {new Date(h.created_at).toLocaleDateString("pt-BR")}
-                </button>
+                  {renamingId === h.id ? (
+                    <>
+                      <input
+                        autoFocus
+                        value={renameValue}
+                        onChange={(e) => setRenameValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") confirmRename(h.id);
+                          if (e.key === "Escape") setRenamingId(null);
+                        }}
+                        className="flex-1 rounded-lg border border-border bg-charcoal px-3 py-1.5 text-xs text-cream focus:border-blush focus:outline-none"
+                      />
+                      <button
+                        onClick={() => confirmRename(h.id)}
+                        aria-label="salvar nome"
+                        className="rounded-full p-1.5 text-blush hover:bg-blush/10 transition"
+                      >
+                        <Check size={14} />
+                      </button>
+                      <button
+                        onClick={() => setRenamingId(null)}
+                        aria-label="cancelar"
+                        className="rounded-full p-1.5 text-cream/50 hover:text-cream transition"
+                      >
+                        <X size={14} />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => openHistory(h.id)}
+                        className="flex-1 text-left text-xs text-cream/65 hover:text-blush transition"
+                      >
+                        {h.title || "plano"} ·{" "}
+                        <span className="text-cream/35">
+                          {new Date(h.created_at).toLocaleDateString("pt-BR")}
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setRenamingId(h.id);
+                          setRenameValue(h.title || "");
+                        }}
+                        aria-label="renomear plano"
+                        className="rounded-full p-1.5 text-cream/45 hover:text-blush hover:bg-blush/10 transition"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(h.id)}
+                        aria-label="apagar plano"
+                        className="rounded-full p-1.5 text-cream/45 hover:text-red-400 hover:bg-red-400/10 transition"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </>
+                  )}
+                </div>
               ))}
             </div>
           </section>
         )}
+
 
         {plan && (
           <section className="mt-10">
